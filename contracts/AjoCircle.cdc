@@ -1,40 +1,40 @@
-pub contract AjoCircle {
+access(all) contract AjoCircle {
     
-    pub event CircleCreated(circleId: UInt64, creator: Address, name: String)
-    pub event MemberJoined(circleId: UInt64, member: Address)
-    pub event ContributionMade(circleId: UInt64, member: Address, round: UInt64, amount: UFix64)
-    pub event PayoutExecuted(circleId: UInt64, recipient: Address, round: UInt64, amount: UFix64)
-    pub event MemberDefaulted(circleId: UInt64, member: Address, missedRound: UInt64)
-    pub event MemberExpelled(circleId: UInt64, member: Address, reason: String)
-    pub event CircleCompleted(circleId: UInt64)
-    pub event CirclePaused(circleId: UInt64, reason: String)
+    access(all) event CircleCreated(circleId: UInt64, creator: Address, name: String)
+    access(all) event MemberJoined(circleId: UInt64, member: Address)
+    access(all) event ContributionMade(circleId: UInt64, member: Address, round: UInt64, amount: UFix64)
+    access(all) event PayoutExecuted(circleId: UInt64, recipient: Address, round: UInt64, amount: UFix64)
+    access(all) event MemberDefaulted(circleId: UInt64, member: Address, missedRound: UInt64)
+    access(all) event MemberExpelled(circleId: UInt64, member: Address, reason: String)
+    access(all) event CircleCompleted(circleId: UInt64)
+    access(all) event CirclePaused(circleId: UInt64, reason: String)
     
-    pub enum CircleStatus: UInt8 {
-        pub case ACTIVE
-        pub case PAUSED
-        pub case COMPLETED
-        pub case DISSOLVED
+    access(all) enum CircleStatus: UInt8 {
+        access(all) case ACTIVE
+        access(all) case PAUSED
+        access(all) case COMPLETED
+        access(all) case DISSOLVED
     }
     
-    pub enum MemberStatus: UInt8 {
-        pub case ACTIVE
-        pub case GRACE_PERIOD
-        pub case DEFAULTED
-        pub case EXPELLED
+    access(all) enum MemberStatus: UInt8 {
+        access(all) case ACTIVE
+        access(all) case GRACE_PERIOD
+        access(all) case DEFAULTED
+        access(all) case EXPELLED
     }
     
-    pub struct Member {
-        pub let address: Address
-        pub let name: String
-        pub let phone: String?
-        pub let email: String?
-        pub let joinedAt: UFix64
-        pub var status: MemberStatus
-        pub var roundsPaid: [UInt64]
-        pub var missedRounds: [UInt64]
-        pub var depositAmount: UFix64
-        pub var depositPaid: Bool
-        pub var missedCount: UInt64
+    access(all) struct Member {
+        access(all) let address: Address
+        access(all) let name: String
+        access(all) let phone: String?
+        access(all) let email: String?
+        access(all) let joinedAt: UFix64
+        access(all) var status: MemberStatus
+        access(all) var roundsPaid: [UInt64]
+        access(all) var missedRounds: [UInt64]
+        access(all) var depositAmount: UFix64
+        access(all) var depositPaid: Bool
+        access(all) var missedCount: UInt64
         
         init(address: Address, name: String, phone: String?, email: String?, depositAmount: UFix64) {
             self.address = address
@@ -50,36 +50,36 @@ pub contract AjoCircle {
             self.missedCount = 0
         }
         
-        pub fun markPaid(round: UInt64) {
+        access(all) fun markPaid(round: UInt64) {
             self.roundsPaid.append(round)
         }
         
-        pub fun markMissed(round: UInt64) {
+        access(all) fun markMissed(round: UInt64) {
             self.missedRounds.append(round)
             self.missedCount = self.missedCount + 1
         }
         
-        pub fun setStatus(status: MemberStatus) {
+        access(all) fun setStatus(status: MemberStatus) {
             self.status = status
         }
         
-        pub fun setDepositPaid() {
+        access(all) fun setDepositPaid() {
             self.depositPaid = true
         }
     }
     
-    pub struct CircleConfig {
-        pub let name: String
-        pub let description: String
-        pub let contributionAmount: UFix64
-        pub let contributionFrequency: UInt64
-        pub let totalRounds: UInt64
-        pub let securityDeposit: UFix64
-        pub let penaltyRate: UFix64
-        pub let gracePeriod: UInt64
-        pub let maxMissesBeforeExpulsion: UInt64
-        pub let agreementCID: String
-        pub let payoutOrder: [Address]
+    access(all) struct CircleConfig {
+        access(all) let name: String
+        access(all) let description: String
+        access(all) let contributionAmount: UFix64
+        access(all) let contributionFrequency: UInt64
+        access(all) let totalRounds: UInt64
+        access(all) let securityDeposit: UFix64
+        access(all) let penaltyRate: UFix64
+        access(all) let gracePeriod: UInt64
+        access(all) let maxMissesBeforeExpulsion: UInt64
+        access(all) let agreementCID: String
+        access(all) let payoutOrder: [Address]
         
         init(
             name: String,
@@ -108,24 +108,24 @@ pub contract AjoCircle {
         }
     }
     
-    pub struct Circle {
-        pub let id: UInt64
-        pub let config: CircleConfig
-        pub let creator: Address
-        pub var members: {Address: Member}
-        pub var status: CircleStatus
-        pub var currentRound: UInt64
-        pub var totalCollected: UFix64
-        pub let startTime: UFix64
-        pub var lastPayoutTime: UFix64?
-        pub var nextPayoutTime: UFix64?
-        pub var pausedUntil: UFix64?
-        pub var pauseReason: String?
-        pub var completionTime: UFix64?
-        pub var roundContributions: {UInt64: {Address: Bool}}
-        pub var roundPayouts: {UInt64: Address}
-        pub var pauseVotes: {Address: Bool}
-        pub var dissolveVotes: {Address: Bool}
+    access(all) struct Circle {
+        access(all) let id: UInt64
+        access(all) let config: CircleConfig
+        access(all) let creator: Address
+        access(all) var members: {Address: Member}
+        access(all) var status: CircleStatus
+        access(all) var currentRound: UInt64
+        access(all) var totalCollected: UFix64
+        access(all) let startTime: UFix64
+        access(all) var lastPayoutTime: UFix64?
+        access(all) var nextPayoutTime: UFix64?
+        access(all) var pausedUntil: UFix64?
+        access(all) var pauseReason: String?
+        access(all) var completionTime: UFix64?
+        access(all) var roundContributions: {UInt64: {Address: Bool}}
+        access(all) var roundPayouts: {UInt64: Address}
+        access(all) var pauseVotes: {Address: Bool}
+        access(all) var dissolveVotes: {Address: Bool}
         
         init(id: UInt64, config: CircleConfig, creator: Address) {
             self.id = id
@@ -147,11 +147,11 @@ pub contract AjoCircle {
             self.dissolveVotes = {}
         }
         
-        pub fun addMember(member: Member) {
+        access(all) fun addMember(member: Member) {
             self.members[member.address] = member
         }
         
-        pub fun recordContribution(member: Address, round: UInt64, amount: UFix64) {
+        access(all) fun recordContribution(member: Address, round: UInt64, amount: UFix64) {
             if !self.roundContributions.containsKey(round) {
                 self.roundContributions[round] = {}
             }
@@ -159,34 +159,34 @@ pub contract AjoCircle {
             self.totalCollected = self.totalCollected + amount
         }
         
-        pub fun recordPayout(round: UInt64, recipient: Address) {
+        access(all) fun recordPayout(round: UInt64, recipient: Address) {
             self.roundPayouts[round] = recipient
             self.lastPayoutTime = getCurrentBlock().timestamp
-            self.nextPayoutTime = self.lastPayoutTime! + self.config.contributionFrequency
+            self.nextPayoutTime = self.lastPayoutTime! + UFix64(self.config.contributionFrequency)
             self.currentRound = round
         }
         
-        pub fun setStatus(status: CircleStatus) {
+        access(all) fun setStatus(status: CircleStatus) {
             self.status = status
         }
         
-        pub fun complete() {
+        access(all) fun complete() {
             self.status = CircleStatus.COMPLETED
             self.completionTime = getCurrentBlock().timestamp
         }
     }
     
-    pub var circles: @{UInt64: Circle}
-    pub var nextCircleId: UInt64
-    pub var userCircles: {Address: [UInt64]}
+    access(all) var circles: {UInt64: Circle}
+    access(all) var nextCircleId: UInt64
+    access(all) var userCircles: {Address: [UInt64]}
     
     init() {
-        self.circles <- {}
+        self.circles = {}
         self.nextCircleId = 1
         self.userCircles = {}
     }
     
-    pub fun createCircle(
+    access(all) fun createCircle(
         name: String,
         description: String,
         contributionAmount: UFix64,
@@ -223,7 +223,7 @@ pub contract AjoCircle {
         )
         
         let circleId = self.nextCircleId
-        let circle <- create Circle(id: circleId, config: config, creator: creator)
+        let circle = Circle(id: circleId, config: config, creator: creator)
         
         var i = 0
         while i < memberAddresses.length {
@@ -245,7 +245,7 @@ pub contract AjoCircle {
             i = i + 1
         }
         
-        self.circles[circleId] <-! circle
+        self.circles[circleId] = circle
         self.nextCircleId = self.nextCircleId + 1
         
         emit CircleCreated(circleId: circleId, creator: creator, name: name)
@@ -253,26 +253,28 @@ pub contract AjoCircle {
         return circleId
     }
     
-    pub fun contribute(circleId: UInt64, round: UInt64, amount: UFix64) {
+    access(all) fun contribute(circleId: UInt64, round: UInt64, amount: UFix64) {
         pre {
             self.circles.containsKey(circleId): "Circle not found"
         }
         
-        let circleRef = &self.circles[circleId] as &Circle
         let memberAddress = self.account.address
+        let circle = self.circles[circleId]!
         
-        assert(circleRef.members.containsKey(memberAddress), message: "Not a member")
-        assert(circleRef.status == CircleStatus.ACTIVE, message: "Circle not active")
-        assert(amount == circleRef.config.contributionAmount, message: "Incorrect amount")
+        assert(circle.members.containsKey(memberAddress), message: "Not a member")
+        assert(circle.status == CircleStatus.ACTIVE, message: "Circle not active")
+        assert(amount == circle.config.contributionAmount, message: "Incorrect amount")
         
-        let memberRef = &circleRef.members[memberAddress] as &Member
-        memberRef.markPaid(round: round)
-        
-        if memberRef.status == MemberStatus.GRACE_PERIOD {
-            memberRef.setStatus(status: MemberStatus.ACTIVE)
+        var member = circle.members[memberAddress]!
+        member.markPaid(round: round)
+        if member.status == MemberStatus.GRACE_PERIOD {
+            member.setStatus(status: MemberStatus.ACTIVE)
         }
         
-        circleRef.recordContribution(member: memberAddress, round: round, amount: amount)
+        var updatedCircle = circle
+        updatedCircle.members[memberAddress] = member
+        updatedCircle.recordContribution(member: memberAddress, round: round, amount: amount)
+        self.circles[circleId] = updatedCircle
         
         emit ContributionMade(circleId: circleId, member: memberAddress, round: round, amount: amount)
         
@@ -281,68 +283,78 @@ pub contract AjoCircle {
         }
     }
     
-    pub fun executePayout(circleId: UInt64, round: UInt64) {
+    access(all) fun executePayout(circleId: UInt64, round: UInt64) {
         pre {
             self.circles.containsKey(circleId): "Circle not found"
         }
         
-        let circleRef = &self.circles[circleId] as &Circle
+        let circle = self.circles[circleId]!
         
         assert(self.checkAllContributionsPaid(circleId: circleId, round: round), message: "Not all contributions received")
         
-        let recipientIndex = Int((round - 1) % UInt64(circleRef.config.payoutOrder.length))
-        let recipient = circleRef.config.payoutOrder[recipientIndex]
+        let recipientIndex = Int((round - 1) % UInt64(circle.config.payoutOrder.length))
+        let recipient = circle.config.payoutOrder[recipientIndex]
         
-        let payoutAmount = UFix64(circleRef.members.length) * circleRef.config.contributionAmount
+        let payoutAmount = UFix64(circle.members.length) * circle.config.contributionAmount
         
-        circleRef.recordPayout(round: round, recipient: recipient)
+        var updatedCircle = circle
+        updatedCircle.recordPayout(round: round, recipient: recipient)
+        if round == updatedCircle.config.totalRounds {
+            updatedCircle.complete()
+        }
+        self.circles[circleId] = updatedCircle
         
         emit PayoutExecuted(circleId: circleId, recipient: recipient, round: round, amount: payoutAmount)
         
-        if round == circleRef.config.totalRounds {
-            circleRef.complete()
+        if round == circle.config.totalRounds {
             emit CircleCompleted(circleId: circleId)
         }
     }
     
-    pub fun reportMissedPayment(circleId: UInt64, round: UInt64, member: Address) {
+    access(all) fun reportMissedPayment(circleId: UInt64, round: UInt64, member: Address) {
         pre {
             self.circles.containsKey(circleId): "Circle not found"
         }
         
-        let circleRef = &self.circles[circleId] as &Circle
+        let circle = self.circles[circleId]!
+        assert(circle.members.containsKey(member), message: "Member not found")
         
-        assert(circleRef.members.containsKey(member), message: "Member not found")
-        
-        let memberRef = &circleRef.members[member] as &Member
-        
-        if !circleRef.roundContributions.containsKey(round) || 
-           !circleRef.roundContributions[round]!.containsKey(member) {
+        if !circle.roundContributions.containsKey(round) ||
+           !circle.roundContributions[round]!.containsKey(member) {
             
-            memberRef.markMissed(round: round)
+            var mem = circle.members[member]!
+            mem.markMissed(round: round)
             
-            if memberRef.missedCount >= circleRef.config.maxMissesBeforeExpulsion {
-                self.expelMember(circleId: circleId, member: member, reason: "Exceeded maximum missed payments")
+            var updatedCircle = circle
+            if mem.missedCount >= circle.config.maxMissesBeforeExpulsion {
+                mem.setStatus(status: MemberStatus.EXPELLED)
+                updatedCircle.members[member] = mem
+                self.circles[circleId] = updatedCircle
+                emit MemberExpelled(circleId: circleId, member: member, reason: "Exceeded maximum missed payments")
             } else {
-                memberRef.setStatus(status: MemberStatus.GRACE_PERIOD)
+                mem.setStatus(status: MemberStatus.GRACE_PERIOD)
+                updatedCircle.members[member] = mem
+                self.circles[circleId] = updatedCircle
             }
             
             emit MemberDefaulted(circleId: circleId, member: member, missedRound: round)
         }
     }
     
-    pub fun expelMember(circleId: UInt64, member: Address, reason: String) {
+    access(all) fun expelMember(circleId: UInt64, member: Address, reason: String) {
         pre {
             self.circles.containsKey(circleId): "Circle not found"
         }
         
-        let circleRef = &self.circles[circleId] as &Circle
+        let circle = self.circles[circleId]!
+        assert(self.account.address == circle.creator, message: "Only creator can expel")
+        assert(circle.members.containsKey(member), message: "Member not found")
         
-        assert(self.account.address == circleRef.creator, message: "Only creator can expel")
-        assert(circleRef.members.containsKey(member), message: "Member not found")
-        
-        let memberRef = &circleRef.members[member] as &Member
-        memberRef.setStatus(status: MemberStatus.EXPELLED)
+        var mem = circle.members[member]!
+        mem.setStatus(status: MemberStatus.EXPELLED)
+        var updatedCircle = circle
+        updatedCircle.members[member] = mem
+        self.circles[circleId] = updatedCircle
         
         emit MemberExpelled(circleId: circleId, member: member, reason: reason)
     }
@@ -351,7 +363,7 @@ pub contract AjoCircle {
         var shuffled = members
         var i = shuffled.length - 1
         while i > 0 {
-            let j = Int(getCurrentBlock().timestamp % UInt64(i + 1))
+            let j = Int(UInt64(getCurrentBlock().height) % UInt64(i + 1))
             let temp = shuffled[i]
             shuffled[i] = shuffled[j]
             shuffled[j] = temp
@@ -361,19 +373,18 @@ pub contract AjoCircle {
     }
     
     access(self) fun checkAllContributionsPaid(circleId: UInt64, round: UInt64): Bool {
-        let circleRef = &self.circles[circleId] as &Circle
+        let circle = self.circles[circleId]!
         
-        if !circleRef.roundContributions.containsKey(round) {
+        if !circle.roundContributions.containsKey(round) {
             return false
         }
         
-        for memberAddr in circleRef.members.keys {
-            let member = circleRef.members[memberAddr]!
+        for memberAddr in circle.members.keys {
+            let member = circle.members[memberAddr]!
             if member.status == MemberStatus.EXPELLED {
                 continue
             }
-            
-            if !circleRef.roundContributions[round]!.containsKey(memberAddr) {
+            if !circle.roundContributions[round]!.containsKey(memberAddr) {
                 return false
             }
         }
@@ -381,34 +392,34 @@ pub contract AjoCircle {
         return true
     }
     
-    pub fun getCircle(circleId: UInt64): Circle? {
+    access(all) fun getCircle(circleId: UInt64): Circle? {
         return self.circles[circleId]
     }
     
-    pub fun getUserCircles(address: Address): [UInt64]? {
+    access(all) fun getUserCircles(address: Address): [UInt64]? {
         return self.userCircles[address]
     }
     
-    pub fun getMemberInfo(circleId: UInt64, member: Address): Member? {
-        if let circleRef = &self.circles[circleId] as &Circle? {
-            return circleRef.members[member]
+    access(all) fun getMemberInfo(circleId: UInt64, member: Address): Member? {
+        if let circle = self.circles[circleId] {
+            return circle.members[member]
         }
         return nil
     }
     
-    pub fun getNextPayout(circleId: UInt64): Address? {
-        if let circleRef = &self.circles[circleId] as &Circle? {
-            if circleRef.status != CircleStatus.ACTIVE {
+    access(all) fun getNextPayout(circleId: UInt64): Address? {
+        if let circle = self.circles[circleId] {
+            if circle.status != CircleStatus.ACTIVE {
                 return nil
             }
             
-            let nextRound = circleRef.currentRound + 1
-            if nextRound > circleRef.config.totalRounds {
+            let nextRound = circle.currentRound + 1
+            if nextRound > circle.config.totalRounds {
                 return nil
             }
             
-            let recipientIndex = Int((nextRound - 1) % UInt64(circleRef.config.payoutOrder.length))
-            return circleRef.config.payoutOrder[recipientIndex]
+            let recipientIndex = Int((nextRound - 1) % UInt64(circle.config.payoutOrder.length))
+            return circle.config.payoutOrder[recipientIndex]
         }
         return nil
     }
