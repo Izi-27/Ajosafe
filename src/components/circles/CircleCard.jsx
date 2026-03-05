@@ -122,7 +122,7 @@ export default function CircleCard({ circle }) {
 
         <Link href={`/circles/${circle.id}`}>
           <button className="text-primary-600 hover:text-primary-700 font-medium text-sm transition-colors">
-            View Details ->
+            View Details {'->'}
           </button>
         </Link>
       </div>
