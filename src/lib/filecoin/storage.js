@@ -1,10 +1,32 @@
-import lighthouse from '@lighthouse-web3/sdk';
+async function postJSON(url, body) {
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
 
-const LIGHTHOUSE_API_KEY = process.env.LIGHTHOUSE_API_KEY;
+  if (!response.ok) {
+    let message = 'Filecoin request failed';
+
+    try {
+      const error = await response.json();
+      message = error.error || message;
+    } catch (_) {
+      // Ignore JSON parsing issues and use the default message.
+    }
+
+    throw new Error(message);
+  }
+
+  return response.json();
+}
 
 export async function storeAgreementOnFilecoin(agreementData) {
   const agreement = {
     circleName: agreementData.name,
+    description: agreementData.description || '',
     createdAt: new Date().toISOString(),
     members: agreementData.members,
     rules: {
@@ -19,33 +41,36 @@ export async function storeAgreementOnFilecoin(agreementData) {
     signatures: [],
   };
 
-  const agreementJSON = JSON.stringify(agreement, null, 2);
-  const blob = new Blob([agreementJSON], { type: 'application/json' });
-  const file = new File([blob], `agreement-${Date.now()}.json`);
+  const result = await postJSON('/api/filecoin/upload', {
+    type: 'agreement',
+    payload: agreement,
+  });
 
-  try {
-    const uploadResponse = await lighthouse.upload(file, LIGHTHOUSE_API_KEY);
-    const cid = uploadResponse.data.Hash;
-
-    return {
-      cid,
-      url: `https://gateway.lighthouse.storage/ipfs/${cid}`,
-    };
-  } catch (error) {
-    console.error('Filecoin upload error:', error);
-    throw new Error('Failed to store agreement on Filecoin');
-  }
+  return {
+    cid: result.pieceCid,
+    pieceCid: result.pieceCid,
+    payloadCid: result.payloadCid || null,
+  };
 }
 
-export async function getAgreementFromFilecoin(cid) {
-  try {
-    const response = await fetch(`https://gateway.lighthouse.storage/ipfs/${cid}`);
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error('Filecoin retrieval error:', error);
-    throw new Error('Failed to retrieve agreement from Filecoin');
+export async function getAgreementFromFilecoin(pieceCid) {
+  const response = await fetch(`/api/filecoin/${encodeURIComponent(pieceCid)}`);
+
+  if (!response.ok) {
+    let message = 'Failed to retrieve agreement from Filecoin';
+
+    try {
+      const error = await response.json();
+      message = error.error || message;
+    } catch (_) {
+      // Ignore JSON parsing issues and use the default message.
+    }
+
+    throw new Error(message);
   }
+
+  const result = await response.json();
+  return result.payload;
 }
 
 export async function storeSignature(circleId, memberAddress, signature, agreementCid) {
@@ -57,27 +82,28 @@ export async function storeSignature(circleId, memberAddress, signature, agreeme
     agreementCid,
   };
 
-  const blob = new Blob([JSON.stringify(signatureData)], { type: 'application/json' });
-  const file = new File([blob], `signature-${circleId}-${memberAddress}.json`);
+  const result = await postJSON('/api/filecoin/upload', {
+    type: 'signature',
+    payload: signatureData,
+  });
 
-  try {
-    const uploadResponse = await lighthouse.upload(file, LIGHTHOUSE_API_KEY);
-    return uploadResponse.data.Hash;
-  } catch (error) {
-    console.error('Signature upload error:', error);
-    throw new Error('Failed to store signature');
-  }
+  return result.pieceCid;
 }
 
 export async function uploadToIPFS(file) {
-  try {
-    const uploadResponse = await lighthouse.upload(file, LIGHTHOUSE_API_KEY);
-    return {
-      cid: uploadResponse.data.Hash,
-      url: `https://gateway.lighthouse.storage/ipfs/${uploadResponse.data.Hash}`,
-    };
-  } catch (error) {
-    console.error('IPFS upload error:', error);
-    throw new Error('Failed to upload to IPFS');
-  }
+  const text = await file.text();
+  const result = await postJSON('/api/filecoin/upload', {
+    type: 'file',
+    payload: {
+      name: file.name,
+      contentType: file.type || 'text/plain',
+      body: text,
+    },
+  });
+
+  return {
+    cid: result.pieceCid,
+    pieceCid: result.pieceCid,
+    payloadCid: result.payloadCid || null,
+  };
 }

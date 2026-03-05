@@ -3,7 +3,7 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   images: {
-    domains: ['gateway.lighthouse.storage', 'ipfs.io'],
+    domains: ['ipfs.io'],
   },
   webpack: (config) => {
     config.resolve.fallback = {

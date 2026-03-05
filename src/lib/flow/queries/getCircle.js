@@ -1,12 +1,15 @@
 import * as fcl from '@onflow/fcl';
 import * as t from '@onflow/types';
+import { assertFlowReady } from '@/lib/flow/client';
 
 export const getCircleQuery = async (circleId) => {
+  assertFlowReady();
+
   const result = await fcl.query({
     cadence: `
       import AjoCircle from 0xAjoCircle
       
-      pub fun main(circleId: UInt64): AjoCircle.Circle? {
+      access(all) fun main(circleId: UInt64): AjoCircle.Circle? {
         return AjoCircle.getCircle(circleId: circleId)
       }
     `,
@@ -17,11 +20,13 @@ export const getCircleQuery = async (circleId) => {
 };
 
 export const getUserCirclesQuery = async (address) => {
+  assertFlowReady();
+
   const result = await fcl.query({
     cadence: `
       import AjoCircle from 0xAjoCircle
       
-      pub fun main(address: Address): [UInt64]? {
+      access(all) fun main(address: Address): [UInt64]? {
         return AjoCircle.getUserCircles(address: address)
       }
     `,
@@ -32,11 +37,13 @@ export const getUserCirclesQuery = async (address) => {
 };
 
 export const getMemberInfoQuery = async (circleId, memberAddress) => {
+  assertFlowReady();
+
   const result = await fcl.query({
     cadence: `
       import AjoCircle from 0xAjoCircle
       
-      pub fun main(circleId: UInt64, member: Address): AjoCircle.Member? {
+      access(all) fun main(circleId: UInt64, member: Address): AjoCircle.Member? {
         return AjoCircle.getMemberInfo(circleId: circleId, member: member)
       }
     `,
@@ -50,11 +57,13 @@ export const getMemberInfoQuery = async (circleId, memberAddress) => {
 };
 
 export const getNextPayoutQuery = async (circleId) => {
+  assertFlowReady();
+
   const result = await fcl.query({
     cadence: `
       import AjoCircle from 0xAjoCircle
       
-      pub fun main(circleId: UInt64): Address? {
+      access(all) fun main(circleId: UInt64): Address? {
         return AjoCircle.getNextPayout(circleId: circleId)
       }
     `,

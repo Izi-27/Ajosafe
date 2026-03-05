@@ -1,17 +1,25 @@
 import * as fcl from '@onflow/fcl';
 import * as t from '@onflow/types';
+import { assertFlowReady } from '@/lib/flow/client';
 
 export const contributeTransaction = async (circleId, round, amount) => {
+  assertFlowReady();
+
   const transactionId = await fcl.mutate({
     cadence: `
       import AjoCircle from 0xAjoCircle
       
       transaction(circleId: UInt64, round: UInt64, amount: UFix64) {
-        prepare(acct: AuthAccount) {}
+        let member: Address
+
+        prepare(signer: &Account) {
+          self.member = signer.address
+        }
         
         execute {
           AjoCircle.contribute(
             circleId: circleId,
+            member: self.member,
             round: round,
             amount: amount
           )

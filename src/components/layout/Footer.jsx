@@ -66,7 +66,7 @@ export default function Footer() {
 
         <div className="border-t border-gray-800 mt-8 pt-8 text-sm text-center text-gray-500">
           <p>&copy; {new Date().getFullYear()} AjoSafe. Built for PL_Genesis Hackathon.</p>
-          <p className="mt-2">Powered by Flow, Filecoin, and Web3Auth</p>
+          <p className="mt-2">Powered by Flow and Filecoin</p>
         </div>
       </div>
     </footer>

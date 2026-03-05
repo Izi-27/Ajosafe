@@ -42,6 +42,10 @@ const useCircleStore = create((set, get) => ({
   createCircle: async (circleData) => {
     set({ loading: true, error: null });
     try {
+      if (circleData.members.length !== circleData.totalRounds) {
+        throw new Error('Total rounds must match the number of members for the current payout model.');
+      }
+
       const { cid } = await storeAgreementOnFilecoin({
         name: circleData.name,
         description: circleData.description,

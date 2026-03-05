@@ -5,7 +5,7 @@ import useCircleStore from '@/store/circleStore';
 import useAuthStore from '@/store/authStore';
 import { toast } from 'sonner';
 import { ArrowLeft, ArrowRight, Check, Plus, X } from 'lucide-react';
-import { validateCircleData, validateMemberData } from '@/lib/utils/validators';
+import { validateCircleData, isValidFlowAddress } from '@/lib/utils/validators';
 
 export default function CreateCircle() {
   const router = useRouter();
@@ -63,6 +63,15 @@ export default function CreateCircle() {
       const validMembers = members.filter(m => m.name && m.address);
       if (validMembers.length < 2) {
         toast.error('You need at least 2 members (including yourself)');
+        return;
+      }
+      if (parseInt(formData.totalRounds) !== validMembers.length) {
+        toast.error('Total rounds must equal the number of members.');
+        return;
+      }
+      const invalidMember = validMembers.find((member) => !isValidFlowAddress(member.address));
+      if (invalidMember) {
+        toast.error(`Invalid Flow address for ${invalidMember.name}`);
         return;
       }
       setStep(3);
@@ -216,7 +225,7 @@ export default function CreateCircle() {
                   required
                 />
                 <p className="text-sm text-gray-500 mt-1">
-                  Number of payout rounds (one per member)
+                  Number of payout rounds. For the current contract, this must equal the member count.
                 </p>
               </div>
 

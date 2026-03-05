@@ -1,5 +1,7 @@
 # AjoSafe - PL_Genesis Hackathon Submission
 
+> Historical submission snapshot. For the corrected current status, use `README.md`.
+
 ## 🏆 Project Information
 
 **Project Name:** AjoSafe  
@@ -80,8 +82,8 @@ AjoSafe transforms traditional Nigerian savings circles (Ajo/Esusu/Thrift) into 
 - Flow Client Library (FCL)
 
 **Storage Layer:**
-- Filecoin (via Lighthouse SDK)
-- IPFS (via Web3.Storage)
+- Filecoin (via Synapse SDK)
+- Server-side agreement upload/download adapter
 
 **Frontend:**
 - Next.js 14
@@ -94,22 +96,18 @@ AjoSafe transforms traditional Nigerian savings circles (Ajo/Esusu/Thrift) into 
 ### Smart Contract Design
 
 ```cadence
-pub contract AjoCircle {
-    // Core data structures
-    pub struct Circle {
-        pub let config: CircleConfig
-        pub var members: {Address: Member}
-        pub var currentRound: UInt64
-        pub var roundContributions: {UInt64: {Address: Bool}}
-        pub var roundPayouts: {UInt64: Address}
+access(all) contract AjoCircle {
+    access(all) struct Circle {
+        access(all) let config: CircleConfig
+        access(all) var members: {Address: Member}
+        access(all) var currentRound: UInt64
+        access(all) var roundContributions: {UInt64: {Address: Bool}}
+        access(all) var roundPayouts: {UInt64: Address}
     }
-    
-    // Key functions
-    pub fun createCircle(...)
-    pub fun contribute(circleId, round, amount)
-    pub fun executePayout(circleId, round)
-    pub fun reportMissedPayment(circleId, round, member)
-    pub fun expelMember(circleId, member, reason)
+
+    access(all) fun createCircle(...)
+    access(all) fun contribute(circleId: UInt64, member: Address, round: UInt64, amount: UFix64)
+    access(all) fun reportMissedPayment(circleId: UInt64, round: UInt64, member: Address)
 }
 ```
 
@@ -208,13 +206,10 @@ pub contract AjoCircle {
 
 **Code Example:**
 ```cadence
-pub fun contribute(circleId: UInt64, round: UInt64, amount: UFix64) {
-    let circle = &self.circles[circleId] as &Circle
-    circle.recordContribution(member: self.account.address, round: round, amount: amount)
-    
-    if self.checkAllContributionsPaid(circleId: circleId, round: round) {
-        self.executePayout(circleId: circleId, round: round)
-    }
+access(all) fun contribute(circleId: UInt64, member: Address, round: UInt64, amount: UFix64) {
+    let circle = self.circles[circleId]!
+    assert(circle.members.containsKey(member), message: "Not a member of this circle")
+    assert(amount == circle.config.contributionAmount, message: "Incorrect contribution amount")
 }
 ```
 
@@ -235,15 +230,16 @@ pub fun contribute(circleId: UInt64, round: UInt64, amount: UFix64) {
 **Code Example:**
 ```javascript
 export async function storeAgreementOnFilecoin(agreementData) {
-    const agreement = {
-        circleName: agreementData.name,
-        members: agreementData.members,
-        rules: agreementData.rules,
-        signatures: []
-    };
-    
-    const uploadResponse = await lighthouse.upload(file, LIGHTHOUSE_API_KEY);
-    return { cid: uploadResponse.data.Hash };
+  const response = await fetch('/api/filecoin/upload', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      type: 'agreement',
+      payload: agreementData,
+    }),
+  });
+
+  return response.json();
 }
 ```
 
