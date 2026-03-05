@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '@/components/layout/Layout';
 import useCircleStore from '@/store/circleStore';
@@ -25,6 +25,25 @@ export default function CreateCircle() {
   const [members, setMembers] = useState([
     { name: '', email: '', phone: '', address: user?.addr || '' },
   ]);
+
+  useEffect(() => {
+    if (!user?.addr) {
+      return;
+    }
+
+    setMembers((currentMembers) => {
+      if (currentMembers.length === 0) {
+        return [{ name: '', email: '', phone: '', address: user.addr }];
+      }
+
+      const [firstMember, ...rest] = currentMembers;
+      if (firstMember.address === user.addr) {
+        return currentMembers;
+      }
+
+      return [{ ...firstMember, address: user.addr }, ...rest];
+    });
+  }, [user?.addr]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -61,6 +80,10 @@ export default function CreateCircle() {
       }
     } else if (step === 2) {
       const validMembers = members.filter(m => m.name && m.address);
+      if (!members[0]?.address) {
+        toast.error('Your wallet address is not ready yet. Reconnect and try again.');
+        return;
+      }
       if (validMembers.length < 2) {
         toast.error('You need at least 2 members (including yourself)');
         return;
