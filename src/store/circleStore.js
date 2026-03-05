@@ -74,8 +74,14 @@ const useCircleStore = create((set, get) => ({
       set({ loading: false });
       return { circleId, agreementCid: cid };
     } catch (error) {
-      set({ error: error.message, loading: false });
-      throw error;
+      let message = error.message || 'Failed to create circle';
+
+      if (message.includes('Filecoin storage is not configured')) {
+        message = 'Agreement storage is not configured in this deployment yet. Add the Synapse environment variables before creating circles.';
+      }
+
+      set({ error: message, loading: false });
+      throw new Error(message);
     }
   },
 

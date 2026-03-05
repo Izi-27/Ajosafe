@@ -5,9 +5,9 @@ import useCircleStore from '@/store/circleStore';
 import useAuthStore from '@/store/authStore';
 import { formatCurrency, formatTimeDistance, secondsToFrequency } from '@/lib/utils/formatters';
 import { toast } from 'sonner';
-import { 
-  Users, Calendar, DollarSign, TrendingUp, 
-  CheckCircle, AlertCircle, Clock, FileText 
+import {
+  Users, DollarSign, TrendingUp,
+  CheckCircle, FileText
 } from 'lucide-react';
 
 export default function CircleDetails() {
@@ -51,6 +51,8 @@ export default function CircleDetails() {
   const membersList = Object.values(currentCircle.members || {});
   const frequency = secondsToFrequency(currentCircle.config?.contributionFrequency);
   const progress = ((currentCircle.currentRound || 0) / (currentCircle.config?.totalRounds || 1)) * 100;
+  const agreementCid = currentCircle.config?.agreementCID;
+  const isMember = !!currentCircle.members?.[user?.addr];
 
   return (
     <Layout>
@@ -157,12 +159,25 @@ export default function CircleDetails() {
           </div>
         </div>
 
+        {agreementCid && (
+          <div className="card mt-6">
+            <div className="flex items-start space-x-3">
+              <FileText className="w-5 h-5 text-primary-600 mt-1" />
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">Agreement Record</h2>
+                <p className="text-sm text-gray-600 break-all">{agreementCid}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="mt-6 flex justify-center">
           <button
             onClick={() => setShowPaymentModal(true)}
+            disabled={!isMember}
             className="btn-primary px-8 py-3 text-lg"
           >
-            Make Contribution
+            {isMember ? 'Make Contribution' : 'Only Members Can Contribute'}
           </button>
         </div>
 

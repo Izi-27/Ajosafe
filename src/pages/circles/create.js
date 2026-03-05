@@ -400,6 +400,9 @@ export default function CreateCircle() {
                 <p className="text-sm text-blue-900">
                   <strong>Note:</strong> Once created, circle rules cannot be changed. All members must pay a security deposit of ${parseFloat(formData.contributionAmount) * 2} before the circle starts.
                 </p>
+                <p className="text-sm text-blue-900 mt-2">
+                  Circle creation also stores the agreement on Filecoin through Synapse. If Synapse environment variables are missing in the deployment, creation will fail before the Flow transaction is sent.
+                </p>
               </div>
             </div>
           )}

@@ -5,7 +5,9 @@ function getSynapseConfig() {
   const rpcURL = process.env.FILECOIN_RPC_URL || DEFAULT_FILECOIN_RPC_URL;
 
   if (!privateKey) {
-    throw new Error('FILECOIN_SYNAPSE_PRIVATE_KEY is not configured');
+    throw new Error(
+      'Filecoin storage is not configured. Set FILECOIN_SYNAPSE_PRIVATE_KEY and FILECOIN_RPC_URL in your deployment environment.'
+    );
   }
 
   return { privateKey, rpcURL };
@@ -48,7 +50,7 @@ export async function uploadJSONPayloadToFilecoin(type, payload) {
   const normalized = normalizeUploadResult(result);
 
   if (!normalized.pieceCid) {
-    throw new Error('Synapse upload did not return a piece CID');
+    throw new Error('Synapse upload did not return a piece CID.');
   }
 
   return normalized;
