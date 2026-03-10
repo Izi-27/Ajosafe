@@ -2,13 +2,15 @@
 
 ## Current state
 
-The contract in this repo has not been confirmed as deployed to Flow testnet.
+The contract in this repo is deployed to Flow testnet.
 
-The correct next step is to deploy `contracts/AjoCircle.cdc`, capture the real contract address, and set:
+Current deployed address:
 
 ```env
-NEXT_PUBLIC_FLOW_CONTRACT_ADDRESS=0xYOUR_DEPLOYED_CONTRACT
+NEXT_PUBLIC_FLOW_CONTRACT_ADDRESS=0xf7f80e14d9d60ea3
 ```
+
+Use the command below only when you need to update or redeploy the contract.
 
 ## Recommended path
 
@@ -25,6 +27,6 @@ flow project deploy --network testnet
 
 ## Notes
 
-- This file is a deployment guide, not proof that deployment already happened.
-- Do not treat any placeholder or undeployed address as production-ready.
+- This file is a deployment guide for future contract updates.
+- The current deployed address above is the active testnet contract, not a placeholder.
 - If Cadence or Flow CLI compatibility issues appear, fix the contract or deployment transaction before continuing frontend work.
