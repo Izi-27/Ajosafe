@@ -57,7 +57,20 @@ async function createSynapseClient() {
   return Synapse.create({
     account: privateKeyToAccount(privateKey),
     rpcURL,
+    source: 'ajosafe',
   });
+}
+
+async function ensureStoragePreparation(synapse, dataSize) {
+  const preparation = await synapse.storage.prepare({
+    dataSize: BigInt(dataSize),
+  });
+
+  if (preparation?.transaction) {
+    await preparation.transaction.execute();
+  }
+
+  return preparation;
 }
 
 function normalizeUploadResult(result) {
@@ -87,6 +100,7 @@ export async function uploadJSONPayloadToFilecoin(type, payload) {
       });
 
       const bytes = new TextEncoder().encode(body);
+      await ensureStoragePreparation(synapse, bytes.byteLength);
       const result = await synapse.storage.upload(bytes);
       const normalized = normalizeUploadResult(result);
 
