@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { getUserCirclesQuery, getCircleQuery } from '@/lib/flow/queries/getCircle';
 import { createCircleTransaction } from '@/lib/flow/transactions/createCircle';
 import { contributeTransaction } from '@/lib/flow/transactions/contribute';
-import { storeAgreementOnFilecoin } from '@/lib/filecoin/storage';
+import { storeAgreementOnFilecoin, createAgreementAcknowledgement } from '@/lib/filecoin/storage';
 import { frequencyToSeconds } from '@/lib/utils/formatters';
 
 const useCircleStore = create((set, get) => ({
@@ -71,8 +71,23 @@ const useCircleStore = create((set, get) => ({
         memberEmails: circleData.members.map(m => m.email || null),
       });
 
+      let agreementAcknowledgementCid = null;
+      let warning = null;
+
+      try {
+        agreementAcknowledgementCid = await createAgreementAcknowledgement({
+          circleId,
+          agreementCid: cid,
+          memberAddress: circleData.members[0]?.address,
+          memberName: circleData.members[0]?.name,
+          role: 'creator',
+        });
+      } catch (acknowledgementError) {
+        warning = 'Circle created, but the creator acknowledgement record could not be saved to Filecoin.';
+      }
+
       set({ loading: false });
-      return { circleId, agreementCid: cid };
+      return { circleId, agreementCid: cid, agreementAcknowledgementCid, warning };
     } catch (error) {
       let message = error.message || 'Failed to create circle';
 

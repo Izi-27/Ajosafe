@@ -116,9 +116,12 @@ export default function CreateCircle() {
         members: validMembers,
       };
 
-      const { circleId } = await createCircle(circleData);
+      const { circleId, warning } = await createCircle(circleData);
       
       toast.success('Circle created successfully!');
+      if (warning) {
+        toast.warning(warning);
+      }
       router.push(`/circles/${circleId}`);
     } catch (error) {
       toast.error(error.message || 'Failed to create circle');

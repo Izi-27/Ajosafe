@@ -73,24 +73,34 @@ export async function getAgreementFromFilecoin(pieceCid) {
   return result.payload;
 }
 
-export async function storeSignature(circleId, memberAddress, signature, agreementCid) {
-  const signatureData = {
+export async function createAgreementAcknowledgement({
+  circleId,
+  agreementCid,
+  memberAddress,
+  memberName,
+  role = 'member',
+  acknowledgement,
+}) {
+  const acknowledgementData = {
     circleId,
-    memberAddress,
-    signature,
-    timestamp: new Date().toISOString(),
     agreementCid,
+    memberAddress,
+    memberName: memberName || null,
+    role,
+    acknowledgement:
+      acknowledgement || 'I acknowledge the AjoSafe agreement and confirm participation in this circle.',
+    timestamp: new Date().toISOString(),
   };
 
   const result = await postJSON('/api/filecoin/upload', {
-    type: 'signature',
-    payload: signatureData,
+    type: 'agreement-acknowledgement',
+    payload: acknowledgementData,
   });
 
   return result.pieceCid;
 }
 
-export async function uploadToIPFS(file) {
+export async function uploadFileRecordToFilecoin(file) {
   const text = await file.text();
   const result = await postJSON('/api/filecoin/upload', {
     type: 'file',

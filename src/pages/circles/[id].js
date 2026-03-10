@@ -3,7 +3,8 @@ import { useRouter } from 'next/router';
 import Layout from '@/components/layout/Layout';
 import useCircleStore from '@/store/circleStore';
 import useAuthStore from '@/store/authStore';
-import { formatCurrency, formatTimeDistance, secondsToFrequency } from '@/lib/utils/formatters';
+import { formatCurrency, secondsToFrequency } from '@/lib/utils/formatters';
+import { getAgreementFromFilecoin } from '@/lib/filecoin/storage';
 import { toast } from 'sonner';
 import {
   Users, DollarSign, TrendingUp,
@@ -16,12 +17,54 @@ export default function CircleDetails() {
   const { user } = useAuthStore();
   const { currentCircle, loading, fetchCircleDetails, makeContribution } = useCircleStore();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [agreement, setAgreement] = useState(null);
+  const [agreementLoading, setAgreementLoading] = useState(false);
+  const [agreementError, setAgreementError] = useState(null);
 
   useEffect(() => {
     if (id) {
       fetchCircleDetails(parseInt(id));
     }
   }, [id, fetchCircleDetails]);
+
+  useEffect(() => {
+    const agreementCid = currentCircle?.config?.agreementCID;
+
+    if (!agreementCid) {
+      setAgreement(null);
+      setAgreementError(null);
+      return;
+    }
+
+    let active = true;
+
+    const loadAgreement = async () => {
+      setAgreementLoading(true);
+      setAgreementError(null);
+
+      try {
+        const data = await getAgreementFromFilecoin(agreementCid);
+        if (active) {
+          setAgreement(data);
+        }
+      } catch (error) {
+        if (active) {
+          setAgreement(null);
+          setAgreementError(error.message || 'Failed to load agreement details');
+        }
+      } finally {
+        if (active) {
+          setAgreementLoading(false);
+        }
+      }
+    };
+
+    loadAgreement();
+
+    return () => {
+      active = false;
+    };
+  }, [currentCircle?.config?.agreementCID]);
 
   const handleContribute = async () => {
     try {
@@ -166,6 +209,51 @@ export default function CircleDetails() {
               <div>
                 <h2 className="text-xl font-semibold text-gray-900 mb-2">Agreement Record</h2>
                 <p className="text-sm text-gray-600 break-all">{agreementCid}</p>
+                {agreementLoading && (
+                  <p className="text-sm text-gray-500 mt-3">Loading agreement details from Filecoin...</p>
+                )}
+                {agreementError && (
+                  <p className="text-sm text-red-600 mt-3">{agreementError}</p>
+                )}
+                {agreement && (
+                  <div className="mt-4 space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-gray-600">Stored Terms</p>
+                        <p className="font-medium text-gray-900">{agreement.terms}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600">Agreement Members</p>
+                        <p className="font-medium text-gray-900">{agreement.members?.length || 0}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600">Contribution Rule</p>
+                        <p className="font-medium text-gray-900">
+                          {formatCurrency(agreement.rules?.contributionAmount || 0)} / {agreement.rules?.frequency}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600">Penalty Rate</p>
+                        <p className="font-medium text-gray-900">
+                          {((agreement.rules?.penaltyRate || 0) * 100).toFixed(0)}%
+                        </p>
+                      </div>
+                    </div>
+
+                    {agreement.members?.length > 0 && (
+                      <div>
+                        <p className="text-sm text-gray-600 mb-2">Agreement Member List</p>
+                        <ul className="space-y-1 text-sm text-gray-900">
+                          {agreement.members.map((member, index) => (
+                            <li key={`${member.address}-${index}`}>
+                              {member.name} ({member.address})
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
