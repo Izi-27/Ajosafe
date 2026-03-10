@@ -1,7 +1,25 @@
 const DEFAULT_FILECOIN_RPC_URL = 'https://api.calibration.node.glif.io/rpc/v1';
 
+function normalizePrivateKey(privateKey) {
+  if (!privateKey) {
+    return privateKey;
+  }
+
+  return privateKey.startsWith('0x') ? privateKey : `0x${privateKey}`;
+}
+
+function getFilecoinErrorMessage(error, fallback) {
+  return (
+    error?.shortMessage ||
+    error?.details ||
+    error?.cause?.message ||
+    error?.message ||
+    fallback
+  );
+}
+
 function getSynapseConfig() {
-  const privateKey = process.env.FILECOIN_SYNAPSE_PRIVATE_KEY;
+  const privateKey = normalizePrivateKey(process.env.FILECOIN_SYNAPSE_PRIVATE_KEY);
   const rpcURL = process.env.FILECOIN_RPC_URL || DEFAULT_FILECOIN_RPC_URL;
 
   if (!privateKey) {
@@ -15,10 +33,11 @@ function getSynapseConfig() {
 
 async function createSynapseClient() {
   const { Synapse } = await import('@filoz/synapse-sdk');
+  const { privateKeyToAccount } = await import('viem/accounts');
   const { privateKey, rpcURL } = getSynapseConfig();
 
   return Synapse.create({
-    privateKey,
+    account: privateKeyToAccount(privateKey),
     rpcURL,
   });
 }
@@ -38,34 +57,42 @@ function normalizeUploadResult(result) {
 }
 
 export async function uploadJSONPayloadToFilecoin(type, payload) {
-  const synapse = await createSynapseClient();
-  const body = JSON.stringify({
-    type,
-    uploadedAt: new Date().toISOString(),
-    payload,
-  });
+  try {
+    const synapse = await createSynapseClient();
+    const body = JSON.stringify({
+      type,
+      uploadedAt: new Date().toISOString(),
+      payload,
+    });
 
-  const bytes = new TextEncoder().encode(body);
-  const result = await synapse.storage.upload(bytes);
-  const normalized = normalizeUploadResult(result);
+    const bytes = new TextEncoder().encode(body);
+    const result = await synapse.storage.upload(bytes);
+    const normalized = normalizeUploadResult(result);
 
-  if (!normalized.pieceCid) {
-    throw new Error('Synapse upload did not return a piece CID.');
+    if (!normalized.pieceCid) {
+      throw new Error('Synapse upload did not return a piece CID.');
+    }
+
+    return normalized;
+  } catch (error) {
+    throw new Error(getFilecoinErrorMessage(error, 'Filecoin upload failed'));
   }
-
-  return normalized;
 }
 
 export async function downloadJSONPayloadFromFilecoin(pieceCid) {
-  const synapse = await createSynapseClient();
-  const bytes = await synapse.storage.download(pieceCid);
-  const text = new TextDecoder().decode(bytes);
-  const parsed = JSON.parse(text);
+  try {
+    const synapse = await createSynapseClient();
+    const bytes = await synapse.storage.download(pieceCid);
+    const text = new TextDecoder().decode(bytes);
+    const parsed = JSON.parse(text);
 
-  return {
-    pieceCid,
-    payload: parsed.payload,
-    type: parsed.type,
-    uploadedAt: parsed.uploadedAt,
-  };
+    return {
+      pieceCid,
+      payload: parsed.payload,
+      type: parsed.type,
+      uploadedAt: parsed.uploadedAt,
+    };
+  } catch (error) {
+    throw new Error(getFilecoinErrorMessage(error, 'Filecoin download failed'));
+  }
 }
