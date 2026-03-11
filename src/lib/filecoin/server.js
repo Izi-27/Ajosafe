@@ -158,12 +158,18 @@ export async function uploadJSONPayloadToFilecoin(type, payload) {
 export async function downloadJSONPayloadFromFilecoin(pieceCid) {
   try {
     const synapse = await createSynapseClient();
-    const bytes = await synapse.storage.download(pieceCid);
+    const normalizedPieceCid = normalizeCid(pieceCid);
+
+    if (!normalizedPieceCid) {
+      throw new Error('A valid agreement piece CID is required to retrieve Filecoin records.');
+    }
+
+    const bytes = await synapse.storage.download({ pieceCid: normalizedPieceCid });
     const text = new TextDecoder().decode(bytes);
     const parsed = JSON.parse(text);
 
     return {
-      pieceCid,
+      pieceCid: normalizedPieceCid,
       payload: parsed.payload,
       type: parsed.type,
       uploadedAt: parsed.uploadedAt,

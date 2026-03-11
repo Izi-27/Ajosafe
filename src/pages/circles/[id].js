@@ -11,6 +11,19 @@ import {
   CheckCircle, FileText
 } from 'lucide-react';
 
+function formatAgreementError(error) {
+  const message = error?.message || 'Failed to load agreement details';
+
+  if (
+    message.includes('All provider retrieval attempts failed') ||
+    message.includes('Too many promises rejected')
+  ) {
+    return 'The agreement is stored on Filecoin, but retrieval is still indexing. Refresh this page in a moment.';
+  }
+
+  return message;
+}
+
 export default function CircleDetails() {
   const router = useRouter();
   const { id } = router.query;
@@ -50,7 +63,7 @@ export default function CircleDetails() {
       } catch (error) {
         if (active) {
           setAgreement(null);
-          setAgreementError(error.message || 'Failed to load agreement details');
+          setAgreementError(formatAgreementError(error));
         }
       } finally {
         if (active) {
