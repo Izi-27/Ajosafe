@@ -31,7 +31,28 @@ function normalizeCid(value) {
     return value['/'];
   }
 
+  if (typeof value?.toString === 'function') {
+    const normalized = value.toString();
+    if (typeof normalized === 'string' && /^(baf|Qm)/.test(normalized)) {
+      return normalized;
+    }
+  }
+
   return null;
+}
+
+function extractCidFromRetrievalUrl(url) {
+  if (!url || typeof url !== 'string') {
+    return null;
+  }
+
+  try {
+    const parsed = new URL(url);
+    const candidate = parsed.pathname.split('/').filter(Boolean).pop();
+    return candidate && /^(baf|Qm)/.test(candidate) ? candidate : null;
+  } catch (_) {
+    return null;
+  }
 }
 
 function getSynapseConfig() {
@@ -90,9 +111,22 @@ function normalizeUploadResult(result) {
     };
   }
 
+  const pieceCid =
+    normalizeCid(result?.pieceCid || result?.pieceCID || result?.piece_cid) ||
+    normalizeCid(result?.cid) ||
+    normalizeCid(result?.piece) ||
+    normalizeCid(result?.data?.pieceCid || result?.data?.pieceCID || result?.data?.piece_cid) ||
+    normalizeCid(result?.result?.pieceCid || result?.result?.pieceCID || result?.result?.piece_cid) ||
+    extractCidFromRetrievalUrl(result?.copies?.[0]?.retrievalUrl);
+
+  const payloadCid =
+    normalizeCid(result?.payloadCid || result?.payloadCID || result?.payload_cid) ||
+    normalizeCid(result?.data?.payloadCid || result?.data?.payloadCID || result?.data?.payload_cid) ||
+    normalizeCid(result?.result?.payloadCid || result?.result?.payloadCID || result?.result?.payload_cid);
+
   return {
-    pieceCid: normalizeCid(result?.pieceCid || result?.pieceCID || result?.piece_cid),
-    payloadCid: normalizeCid(result?.payloadCid || result?.payloadCID || result?.payload_cid),
+    pieceCid,
+    payloadCid,
   };
 }
 
@@ -111,7 +145,8 @@ export async function uploadJSONPayloadToFilecoin(type, payload) {
     const normalized = normalizeUploadResult(result);
 
     if (!normalized.pieceCid) {
-      throw new Error('Synapse upload did not return a piece CID.');
+      const keys = result && typeof result === 'object' ? Object.keys(result).join(', ') : typeof result;
+      throw new Error(`Synapse upload returned an unexpected result shape. Keys: ${keys || 'none'}`);
     }
 
     return normalized;
