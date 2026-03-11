@@ -1,98 +1,115 @@
 # AjoSafe
 
-AjoSafe is a digital savings-circle platform that turns traditional Ajo, Esusu, and thrift groups into transparent, rule-based, onchain savings products.
+**Tagline:** "Ajo that can't run away with your money"
 
-Instead of trusting one collector to hold everyone else's money, AjoSafe uses smart contracts on Flow to define the circle, track contributions, enforce payout order, and keep the group aligned around shared rules.
+AjoSafe is a digital savings-circle platform inspired by Ajo, Esusu, and other rotating savings groups. The current product turns informal savings circles into transparent, rule-based digital groups on Flow, with shared agreement records stored on Filecoin.
 
-## Project Status
+## Current Value Proposition
 
-AjoSafe is currently in active hackathon development.
+AjoSafe turns informal savings circles into transparent, rule-based digital groups. It gives members a shared onchain record of circle rules, contribution progress, payout order, and agreement terms stored on Filecoin, reducing collector risk and dispute risk while building toward stronger automated enforcement.
 
-- The core web app is live
-- The Flow smart contract is deployed on testnet
-- Circle creation and contribution flows are implemented
-- Filecoin-backed agreement storage is integrated through Synapse, pending fully funded live verification
-- Walletless login and fiat onboarding remain post-hack expansion items
+## What AjoSafe Is Today
 
-## Value Proposition
+The live hackathon build focuses on structure, visibility, and shared accountability.
 
-AjoSafe is designed for ordinary people who already understand group savings, but want a safer and more structured way to run them.
+- circle rules are defined before the group starts
+- the agreement record is stored on Filecoin via Synapse
+- core circle state lives on Flow testnet
+- members can view contribution progress and payout order
+- the app reduces dependence on one collector or one private notebook
 
-It creates value by:
+In its current form, AjoSafe is best understood as a **transparent, rule-based coordination layer for savings circles**.
 
-- reducing collector risk and payout disputes
-- making savings-circle rules visible and consistent
-- giving members a shared record of participation and progress
-- making informal group finance easier to trust, explain, and manage
-- preparing the product for mainstream onboarding over time, including easier login and fiat on-ramps
+## Long-Term Product Vision
+
+The long-term goal is still the original promise behind the brand:
+
+**Ajo that can't run away with your money.**
+
+That post-hack version requires stronger enforcement than the current build provides, including real escrowed funds, mandatory deposits, slashing or reserve coverage for defaults, and deeper automation around payout protection.
+
+## Problem
+
+Traditional savings circles are powerful because they are familiar, social, and accessible. They also break down in predictable ways:
+
+- one collector becomes the single point of failure
+- rules are verbal or poorly documented
+- disputes happen when expectations are unclear
+- members can default after receiving their payout
+- new users face high friction when digital finance tools feel unfamiliar
+
+AjoSafe addresses the first layer of this problem now by making circle rules visible, shared, and durable. It addresses the deeper enforcement problem in the post-hack roadmap.
 
 ## Who AjoSafe Is For
 
 - family and friends savings circles
-- women-led savings groups
-- market associations and cooperatives
-- community groups, churches, and local societies
-- diaspora groups coordinating savings back home
-- first-time crypto users who need a simpler entry point into blockchain-based finance
+- women-led informal savings groups
+- local cooperatives, market associations, and church groups
+- diaspora groups coordinating contributions back home
+- first-time onchain users who need a simpler, more familiar savings model
 
 ## Core Product Values
 
-- trust through rules, not personalities
-- transparency for every member in the circle
-- fairness in contribution and payout expectations
-- accountability without relying on one middleman
-- preserving the community model of Ajo while removing its biggest failure points
+- transparency over ambiguity
+- shared rules over verbal assumptions
+- accountability over blind trust
+- cultural familiarity without collector risk
+- practical coordination first, deeper enforcement next
 
-## What AjoSafe Offers
-
-- smart contract-based circle creation on Flow
-- fixed contribution structure and payout logic
-- member-by-member circle visibility
-- agreement storage support through Filecoin via Synapse
-- dashboard and circle detail views for tracking group progress
-- a foundation for future walletless onboarding and fiat rails
-- a structure that can evolve into a mainstream savings product without losing the cultural familiarity of Ajo
-
-## Current Implementation
+## What The Current Build Delivers
 
 ### Implemented
 
-- landing page and product positioning
-- dashboard experience for viewing circles
+- public web app deployed on Vercel
+- Flow testnet smart contract for circle state and contribution tracking
+- Flow wallet-based authentication through FCL
 - create-circle flow with validation
-- circle detail page and contribution action flow
-- deployed Flow testnet contract for `AjoCircle`
-- Flow transaction and query integration from the frontend
-- Filecoin agreement storage adapter using Synapse-oriented server routes
-- form and runtime guardrails around invalid member setup and missing configuration
-- public Vercel deployment for product demonstration
+- contribution flow from the circle page
+- Filecoin-backed agreement upload and retrieval through Synapse
+- circle detail view with member list, payout timeline, and agreement record
+- onchain storage of agreement CID inside the Flow contract
 
-### In Progress During The Hack
+### Working End-to-End
 
-- live end-to-end testing of circle creation against fully configured Synapse storage
-- production-ready environment setup for Filecoin-backed agreement uploads
-- tighter user-flow validation on the live deployment
-- demo narrative and submission packaging
+- create a circle
+- store the agreement on Filecoin
+- create the circle on Flow testnet
+- load the agreement back on the circle page
+- make contributions to the created circle
 
-### Not Yet Implemented
+### Not Yet Implemented In The Live Runtime
 
-- walletless login in the live runtime
-- NGN direct deposit / fiat on-ramp
-- SMS or WhatsApp reminders
+- walletless email or passkey login
+- NGN deposit or fiat on-ramp
+- real escrow of circle funds
+- mandatory deposit payment before activation
+- deposit slashing or reserve coverage for defaulters
+- automated scheduled payouts
+- invite links and member-acceptance flow
+- reminders via SMS, WhatsApp, or email
 - reputation scoring
-- mobile application
+- dedicated mobile app
 
-## Hackathon Progress
+## What The Current Build Does Not Yet Claim
 
-| Area | Status | Notes |
-| --- | --- | --- |
-| Flow smart contract | Done | Contract deployed to Flow testnet |
-| Frontend application | Done | Public build is live and usable |
-| Circle creation UI | Done | Multi-step flow implemented |
-| Contribution flow | Done | Transaction path implemented |
-| Filecoin agreement storage | Partial | Synapse path is built, but depends on funded env configuration |
-| Walletless onboarding | Pending | Product direction remains valid, runtime implementation still pending |
-| Fiat onboarding | Pending | Not yet integrated in the hackathon build |
+The live hackathon build does **not** yet fully guarantee that a member who has already been paid cannot default without hurting the group.
+
+Today, AjoSafe can:
+
+- define the rules
+- record the agreement
+- track contributions
+- show payout order
+- model default and expulsion states in contract logic
+
+It does **not yet** provide:
+
+- real fund escrow
+- enforced forward commitment of future contributions
+- automatic deposit seizure to cover group losses
+- a fully collateralized anti-default system
+
+That stronger enforcement layer is part of the post-hack roadmap, not the current product claim.
 
 ## Architecture
 
@@ -107,13 +124,13 @@ It creates value by:
 ### Blockchain
 
 - Flow Testnet
-- Cadence smart contracts
+- Cadence smart contract: `AjoCircle`
 - Flow Client Library (FCL)
 
 ### Storage
 
 - Filecoin via Synapse SDK
-- server-side upload and retrieval routes in `src/pages/api/filecoin`
+- server-side upload and retrieval routes under `src/pages/api/filecoin`
 
 ### Current Application Structure
 
@@ -129,18 +146,18 @@ ajosafe/
 |   |-- pages/              Next.js routes
 |   |-- store/              Zustand stores
 |   `-- styles/             Global styles
-|-- flow.json              Flow deployment configuration
-`-- package.json           App scripts and dependencies
+|-- flow.json               Flow deployment configuration
+`-- package.json            App scripts and dependencies
 ```
 
-## User Flow
+## How AjoSafe Works Today
 
-1. A user connects a Flow wallet
-2. The user creates a savings circle and defines members, contribution amount, and schedule
-3. The group agreement is uploaded through the Filecoin storage path
-4. The circle is created on Flow testnet
-5. Members can open the circle, review its status, and contribute according to the defined rules
-6. The product evolves toward easier onboarding, reminders, and fiat entry points
+1. A user connects a Flow wallet.
+2. A circle is created with members, contribution amount, schedule, and penalty settings.
+3. The agreement is stored on Filecoin through Synapse.
+4. The agreement CID is saved inside the Flow contract.
+5. The new circle can be viewed on the dashboard and circle detail page.
+6. Members can contribute according to the configured rules.
 
 ## Flow Contract
 
@@ -185,32 +202,65 @@ Deploy or update the Flow contract:
 flow project deploy --network testnet
 ```
 
+Fund Filecoin Pay for Synapse storage preparation:
+
+```bash
+npm run fund:filecoin-pay
+```
+
 ## Roadmap
 
-### Current Hackathon Scope
+### Hackathon Build
 
-- [x] Deploy Flow savings-circle contract
-- [x] Build public web application
-- [x] Implement create-circle experience
+- [x] Deploy `AjoCircle` on Flow testnet
+- [x] Build the public web application
+- [x] Implement create-circle flow
 - [x] Implement contribution flow
-- [x] Connect frontend to Flow testnet
-- [x] Add Filecoin agreement storage path
-- [ ] Complete live Synapse-backed create-circle testing
-- [ ] Finalize public demo flow and walkthrough
+- [x] Connect the frontend to Flow testnet
+- [x] Add Filecoin agreement storage with Synapse
+- [x] Retrieve and display stored agreement records
+- [ ] Improve UX for long Filecoin-backed circle creation
+- [ ] Finalize public demo flow, script, and submission materials
 
-### Post-Hack Roadmap
+### Post-Hack Product Roadmap
 
-- [ ] Walletless login for mainstream onboarding
+#### Enforcement Layer
+
+- [ ] real token escrow for circle funds
+- [ ] mandatory deposit funding before circle activation
+- [ ] deposit slashing or reserve logic for defaults
+- [ ] payout eligibility tied to contribution compliance
+- [ ] economically robust handling of post-payout defaults
+
+#### Mainstream Onboarding
+
+- [ ] walletless login with email and passkeys
+- [ ] better invitation and member-acceptance flows
 - [ ] NGN deposit and fiat on-ramp support
-- [ ] SMS and messaging reminders
-- [ ] Better member invitation flows
-- [ ] Reputation and participation scoring
-- [ ] Mobile app experience
-- [ ] Multi-currency circles
-- [ ] Insurance and protection layers
+- [ ] clearer onboarding for non-crypto-native users
+
+#### Product Expansion
+
+- [ ] reminders via SMS, email, or WhatsApp
+- [ ] reputation and participation scoring
+- [ ] mobile-first experience
+- [ ] multi-currency circles
+- [ ] stronger analytics and reporting for groups
+
+## Positioning Summary
+
+For the hackathon, AjoSafe should be positioned as:
+
+**a transparent, rule-based digital savings-circle platform**
+
+Not yet as:
+
+**a fully escrowed, fully enforced anti-default savings system**
+
+That stronger market promise remains the post-hack destination and the long-term version of the brand.
 
 ## Why This Matters
 
-AjoSafe is not trying to replace the culture of group savings. It is trying to protect it.
+AjoSafe is not trying to replace the culture of group savings. It is trying to make that culture easier to trust, explain, document, and eventually protect more deeply with software.
 
-The product keeps the social strength of Ajo, but removes the weakest parts of the traditional model: hidden rules, payout disputes, and the risk of one person disappearing with everyone else's money.
+The current build proves that savings-circle rules, membership, contribution progress, payout order, and agreement records can be made visible and durable. The next phase is to make the financial protection layer as strong as the social model deserves.
