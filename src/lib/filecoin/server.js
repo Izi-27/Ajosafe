@@ -18,6 +18,22 @@ function getFilecoinErrorMessage(error, fallback) {
   );
 }
 
+function normalizeCid(value) {
+  if (!value) {
+    return null;
+  }
+
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (typeof value === 'object' && typeof value['/'] === 'string') {
+    return value['/'];
+  }
+
+  return null;
+}
+
 function getSynapseConfig() {
   const privateKey = normalizePrivateKey(process.env.FILECOIN_SYNAPSE_PRIVATE_KEY);
   const rpcURL = process.env.FILECOIN_RPC_URL || DEFAULT_FILECOIN_RPC_URL;
@@ -75,8 +91,8 @@ function normalizeUploadResult(result) {
   }
 
   return {
-    pieceCid: result?.pieceCid || result?.pieceCID || result?.piece_cid || null,
-    payloadCid: result?.payloadCid || result?.payloadCID || result?.payload_cid || null,
+    pieceCid: normalizeCid(result?.pieceCid || result?.pieceCID || result?.piece_cid),
+    payloadCid: normalizeCid(result?.payloadCid || result?.payloadCID || result?.payload_cid),
   };
 }
 

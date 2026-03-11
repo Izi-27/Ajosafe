@@ -23,6 +23,22 @@ async function postJSON(url, body) {
   return response.json();
 }
 
+function normalizeCid(value) {
+  if (!value) {
+    return null;
+  }
+
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (typeof value === 'object' && typeof value['/'] === 'string') {
+    return value['/'];
+  }
+
+  return null;
+}
+
 export async function storeAgreementOnFilecoin(agreementData) {
   const agreement = {
     circleName: agreementData.name,
@@ -47,9 +63,9 @@ export async function storeAgreementOnFilecoin(agreementData) {
   });
 
   return {
-    cid: result.pieceCid,
-    pieceCid: result.pieceCid,
-    payloadCid: result.payloadCid || null,
+    cid: normalizeCid(result.pieceCid),
+    pieceCid: normalizeCid(result.pieceCid),
+    payloadCid: normalizeCid(result.payloadCid),
   };
 }
 
@@ -97,7 +113,7 @@ export async function createAgreementAcknowledgement({
     payload: acknowledgementData,
   });
 
-  return result.pieceCid;
+  return normalizeCid(result.pieceCid);
 }
 
 export async function uploadFileRecordToFilecoin(file) {
@@ -112,8 +128,8 @@ export async function uploadFileRecordToFilecoin(file) {
   });
 
   return {
-    cid: result.pieceCid,
-    pieceCid: result.pieceCid,
-    payloadCid: result.payloadCid || null,
+    cid: normalizeCid(result.pieceCid),
+    pieceCid: normalizeCid(result.pieceCid),
+    payloadCid: normalizeCid(result.payloadCid),
   };
 }
