@@ -73,6 +73,7 @@ export default function CreateCircle() {
           ...formData,
           contributionAmount: parseFloat(formData.contributionAmount),
           totalRounds: parseInt(formData.totalRounds),
+          penaltyRate: parseFloat(formData.penaltyRate),
         });
         setStep(2);
       } catch (error) {
@@ -113,6 +114,7 @@ export default function CreateCircle() {
         ...formData,
         contributionAmount: parseFloat(formData.contributionAmount),
         totalRounds: parseInt(formData.totalRounds),
+        penaltyRate: parseFloat(formData.penaltyRate),
         members: validMembers,
       };
 

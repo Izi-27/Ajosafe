@@ -1,10 +1,10 @@
 {
   "functions": {
     "src/pages/api/filecoin/upload.js": {
-      "maxDuration": 60
+      "maxDuration": 300
     },
     "src/pages/api/filecoin/[pieceCid].js": {
-      "maxDuration": 60
+      "maxDuration": 300
     }
   }
 }
