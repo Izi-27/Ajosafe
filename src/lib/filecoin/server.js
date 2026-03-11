@@ -64,7 +64,7 @@ async function createSynapseClient() {
 async function ensureStoragePreparation(synapse, dataSize) {
   if (!synapse?.storage || typeof synapse.storage.prepare !== 'function') {
     throw new Error(
-      'Synapse SDK version does not support storage.prepare(). Upgrade @filoz/synapse-sdk to the current docs-compatible release before uploading.'
+      'Synapse SDK version does not support storage.prepare(). Ensure @filoz/synapse-sdk v0.39.0 or newer is installed in the deployment before uploading.'
     );
   }
 
