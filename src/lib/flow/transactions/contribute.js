@@ -27,8 +27,8 @@ export const contributeTransaction = async (circleId, round, amount) => {
       }
     `,
     args: (arg, t) => [
-      arg(circleId, t.UInt64),
-      arg(round, t.UInt64),
+      arg(String(circleId), t.UInt64),
+      arg(String(round), t.UInt64),
       arg(amount.toFixed(2), t.UFix64),
     ],
     proposer: fcl.authz,

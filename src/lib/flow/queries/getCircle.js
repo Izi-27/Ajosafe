@@ -13,7 +13,7 @@ export const getCircleQuery = async (circleId) => {
         return AjoCircle.getCircle(circleId: circleId)
       }
     `,
-    args: (arg, t) => [arg(circleId, t.UInt64)],
+    args: (arg, t) => [arg(String(circleId), t.UInt64)],
   });
 
   return result;
@@ -48,7 +48,7 @@ export const getMemberInfoQuery = async (circleId, memberAddress) => {
       }
     `,
     args: (arg, t) => [
-      arg(circleId, t.UInt64),
+      arg(String(circleId), t.UInt64),
       arg(memberAddress, t.Address),
     ],
   });
@@ -67,7 +67,7 @@ export const getNextPayoutQuery = async (circleId) => {
         return AjoCircle.getNextPayout(circleId: circleId)
       }
     `,
-    args: (arg, t) => [arg(circleId, t.UInt64)],
+    args: (arg, t) => [arg(String(circleId), t.UInt64)],
   });
 
   return result;
