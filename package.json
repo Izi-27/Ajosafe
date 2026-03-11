@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "deploy:contract": "flow project deploy --network testnet",
+    "fund:filecoin-pay": "node scripts/fund-filecoin-pay.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:e2e": "playwright test"
