@@ -1,15 +1,54 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '@/components/layout/Layout';
 import useCircleStore from '@/store/circleStore';
 import useAuthStore from '@/store/authStore';
-import { formatCurrency, secondsToFrequency } from '@/lib/utils/formatters';
+import {
+  formatCurrency,
+  formatFlowTimestamp,
+  isFlowTimestampDue,
+  normalizeFlowTimestamp,
+  secondsToFrequency,
+} from '@/lib/utils/formatters';
 import { getAgreementFromFilecoin } from '@/lib/filecoin/storage';
 import { toast } from 'sonner';
 import {
-  Users, DollarSign, TrendingUp,
-  CheckCircle, FileText
+  Users,
+  DollarSign,
+  TrendingUp,
+  CheckCircle,
+  FileText,
+  ShieldCheck,
+  CalendarClock,
 } from 'lucide-react';
+
+const STATUS_META = {
+  0: {
+    label: 'Active',
+    badge: 'bg-green-100 text-green-800',
+    accent: 'text-green-700',
+  },
+  1: {
+    label: 'Paused',
+    badge: 'bg-orange-100 text-orange-800',
+    accent: 'text-orange-700',
+  },
+  2: {
+    label: 'Completed',
+    badge: 'bg-blue-100 text-blue-800',
+    accent: 'text-blue-700',
+  },
+  3: {
+    label: 'Dissolved',
+    badge: 'bg-gray-100 text-gray-800',
+    accent: 'text-gray-700',
+  },
+  4: {
+    label: 'Pending Acknowledgement',
+    badge: 'bg-yellow-100 text-yellow-800',
+    accent: 'text-yellow-700',
+  },
+};
 
 function formatAgreementError(error) {
   const message = error?.message || 'Failed to load agreement details';
@@ -24,11 +63,43 @@ function formatAgreementError(error) {
   return message;
 }
 
+function getStatusMeta(status) {
+  return STATUS_META[Number(status)] || STATUS_META[4];
+}
+
+function buildRoundSchedule(circle) {
+  const status = Number(circle?.status);
+  const activationTime =
+    status === 4 ? null : normalizeFlowTimestamp(circle?.lastPayoutTime);
+  const contributionFrequency = Number(circle?.config?.contributionFrequency || 0);
+  const totalRounds = Number(circle?.config?.totalRounds || 0);
+
+  return Array.from({ length: totalRounds }, (_, index) => {
+    const round = index + 1;
+    const dueAt =
+      activationTime === null ? null : activationTime + contributionFrequency * round;
+
+    return {
+      round,
+      dueAt,
+      isCompleted: round <= Number(circle?.currentRound || 0),
+      isCurrent: round === Number(circle?.currentRound || 0) + 1,
+    };
+  });
+}
+
 export default function CircleDetails() {
   const router = useRouter();
   const { id } = router.query;
   const { user } = useAuthStore();
-  const { currentCircle, loading, fetchCircleDetails, makeContribution } = useCircleStore();
+  const {
+    currentCircle,
+    loading,
+    fetchCircleDetails,
+    makeContribution,
+    acknowledgeAgreement,
+  } = useCircleStore();
+
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [agreement, setAgreement] = useState(null);
   const [agreementLoading, setAgreementLoading] = useState(false);
@@ -36,7 +107,7 @@ export default function CircleDetails() {
 
   useEffect(() => {
     if (id) {
-      fetchCircleDetails(parseInt(id));
+      fetchCircleDetails(parseInt(id, 10));
     }
   }, [id, fetchCircleDetails]);
 
@@ -79,11 +150,101 @@ export default function CircleDetails() {
     };
   }, [currentCircle?.config?.agreementCID]);
 
+  const membersList = useMemo(
+    () => Object.values(currentCircle?.members || {}),
+    [currentCircle?.members]
+  );
+
+  const currentMember = user?.addr ? currentCircle?.members?.[user.addr] : null;
+  const statusMeta = getStatusMeta(currentCircle?.status);
+  const frequency = secondsToFrequency(currentCircle?.config?.contributionFrequency);
+  const agreementCid = currentCircle?.config?.agreementCID;
+  const progress =
+    ((Number(currentCircle?.currentRound || 0) / Number(currentCircle?.config?.totalRounds || 1)) || 0) * 100;
+  const isMember = !!currentMember;
+  const status = Number(currentCircle?.status);
+  const isCirclePending = status === 4;
+  const isCircleActive = status === 0;
+  const isCircleCompleted = status === 2;
+  const nextDueAt = currentCircle?.nextPayoutTime;
+  const isPaymentDue = isFlowTimestampDue(nextDueAt);
+  const acknowledgementCount = membersList.filter((member) => member.depositPaid).length;
+  const roundSchedule = useMemo(() => buildRoundSchedule(currentCircle), [currentCircle]);
+  const activationTime = !isCirclePending
+    ? normalizeFlowTimestamp(currentCircle?.lastPayoutTime)
+    : null;
+  const firstDueTime =
+    activationTime !== null
+      ? activationTime + Number(currentCircle?.config?.contributionFrequency || 0)
+      : null;
+
+  const handleAcknowledgeAgreement = async () => {
+    if (!isMember) {
+      toast.error('Only circle members can acknowledge the agreement.');
+      return;
+    }
+
+    if (!agreementCid) {
+      toast.error('Agreement record is not available for this circle yet.');
+      return;
+    }
+
+    try {
+      const { warning } = await acknowledgeAgreement({
+        circleId: parseInt(id, 10),
+        agreementCid,
+        memberAddress: currentMember.address,
+        memberName: currentMember.name,
+      });
+
+      toast.success('Agreement acknowledged successfully.');
+      if (warning) {
+        toast.warning(warning);
+      }
+    } catch (error) {
+      toast.error(error.message || 'Failed to acknowledge agreement');
+    }
+  };
+
+  const handleOpenContribution = () => {
+    if (!isMember) {
+      toast.error('Only members of this circle can contribute.');
+      return;
+    }
+
+    if (isCirclePending) {
+      toast.error('This circle is pending acknowledgement from all members before it can become active.');
+      return;
+    }
+
+    if (!currentMember?.depositPaid) {
+      toast.error('You must acknowledge the agreement before making a payment.');
+      return;
+    }
+
+    if (!nextDueAt) {
+      toast.error('Payment schedule is not ready yet.');
+      return;
+    }
+
+    if (!isPaymentDue) {
+      toast.error(`You can't make payment until the due date: ${formatFlowTimestamp(nextDueAt)}`);
+      return;
+    }
+
+    setShowPaymentModal(true);
+  };
+
   const handleContribute = async () => {
     try {
-      const nextRound = (currentCircle?.currentRound || 0) + 1;
+      if (!nextDueAt || !isFlowTimestampDue(nextDueAt)) {
+        toast.error(`You can't make payment until the due date: ${formatFlowTimestamp(nextDueAt)}`);
+        return;
+      }
+
+      const nextRound = Number(currentCircle?.currentRound || 0) + 1;
       await makeContribution(
-        parseInt(id),
+        parseInt(id, 10),
         nextRound,
         parseFloat(currentCircle?.config?.contributionAmount || 0)
       );
@@ -104,23 +265,35 @@ export default function CircleDetails() {
     );
   }
 
-  const membersList = Object.values(currentCircle.members || {});
-  const frequency = secondsToFrequency(currentCircle.config?.contributionFrequency);
-  const progress = ((currentCircle.currentRound || 0) / (currentCircle.config?.totalRounds || 1)) * 100;
-  const agreementCid = currentCircle.config?.agreementCID;
-  const isMember = !!currentCircle.members?.[user?.addr];
-
   return (
     <Layout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {currentCircle.config?.name}
-          </h1>
-          <p className="text-gray-600">{currentCircle.config?.description}</p>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                {currentCircle.config?.name}
+              </h1>
+              <p className="text-gray-600">{currentCircle.config?.description}</p>
+            </div>
+            <span className={`inline-flex px-4 py-2 rounded-full text-sm font-semibold ${statusMeta.badge}`}>
+              {statusMeta.label}
+            </span>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+          <div className="card">
+            <div className="flex items-center space-x-3 mb-2">
+              <ShieldCheck className="w-5 h-5 text-primary-600" />
+              <h3 className="font-semibold text-gray-900">Status</h3>
+            </div>
+            <p className={`text-xl font-bold ${statusMeta.accent}`}>{statusMeta.label}</p>
+            <p className="text-sm text-gray-600 mt-1">
+              {acknowledgementCount}/{membersList.length} acknowledged
+            </p>
+          </div>
+
           <div className="card">
             <div className="flex items-center space-x-3 mb-2">
               <DollarSign className="w-5 h-5 text-primary-600" />
@@ -130,6 +303,25 @@ export default function CircleDetails() {
               {formatCurrency(currentCircle.config?.contributionAmount || 0)}
             </p>
             <p className="text-sm text-gray-600 capitalize">{frequency}</p>
+          </div>
+
+          <div className="card">
+            <div className="flex items-center space-x-3 mb-2">
+              <CalendarClock className="w-5 h-5 text-primary-600" />
+              <h3 className="font-semibold text-gray-900">Next Due Date</h3>
+            </div>
+            <p className="text-lg font-bold text-gray-900">
+              {nextDueAt ? formatFlowTimestamp(nextDueAt) : 'Pending activation'}
+            </p>
+            <p className="text-sm text-gray-600 mt-1">
+              {isCirclePending
+                ? 'Starts once all members acknowledge'
+                : isCircleCompleted
+                  ? 'No further payments are due'
+                : isPaymentDue
+                  ? 'Payments are now open'
+                  : 'Payments open on the due date'}
+            </p>
           </div>
 
           <div className="card">
@@ -146,15 +338,6 @@ export default function CircleDetails() {
                 style={{ width: `${progress}%` }}
               />
             </div>
-          </div>
-
-          <div className="card">
-            <div className="flex items-center space-x-3 mb-2">
-              <Users className="w-5 h-5 text-primary-600" />
-              <h3 className="font-semibold text-gray-900">Members</h3>
-            </div>
-            <p className="text-2xl font-bold text-gray-900">{membersList.length}</p>
-            <p className="text-sm text-gray-600">Active participants</p>
           </div>
         </div>
 
@@ -176,10 +359,12 @@ export default function CircleDetails() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-medium text-gray-900">
-                      {member.roundsPaid?.length || 0}/{currentCircle.config?.totalRounds || 0}
+                    <p className={`text-sm font-medium ${member.depositPaid ? 'text-green-700' : 'text-yellow-700'}`}>
+                      {member.depositPaid ? 'Acknowledged' : 'Pending'}
                     </p>
-                    <p className="text-xs text-gray-600">Paid</p>
+                    <p className="text-xs text-gray-600">
+                      Paid {member.roundsPaid?.length || 0}/{currentCircle.config?.totalRounds || 0}
+                    </p>
                   </div>
                 </div>
               ))}
@@ -189,23 +374,34 @@ export default function CircleDetails() {
           <div className="card">
             <h2 className="text-xl font-semibold mb-4">Timeline</h2>
             <div className="space-y-4">
-              {Array.from({ length: currentCircle.config?.totalRounds || 0 }, (_, i) => i + 1).map((round) => {
-                const isPast = round < (currentCircle.currentRound || 0);
-                const isCurrent = round === (currentCircle.currentRound || 0) + 1;
-                
+              {roundSchedule.map((entry) => {
+                const isDue = isFlowTimestampDue(entry.dueAt);
+
                 return (
-                  <div key={round} className="flex items-start space-x-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      isPast ? 'bg-green-100 text-green-600' :
-                      isCurrent ? 'bg-primary-100 text-primary-600' :
-                      'bg-gray-100 text-gray-400'
-                    }`}>
-                      {isPast ? <CheckCircle className="w-5 h-5" /> : round}
+                  <div key={entry.round} className="flex items-start space-x-3">
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                        entry.isCompleted
+                          ? 'bg-green-100 text-green-600'
+                          : entry.isCurrent && isCircleActive
+                            ? 'bg-primary-100 text-primary-600'
+                            : 'bg-gray-100 text-gray-400'
+                      }`}
+                    >
+                      {entry.isCompleted ? <CheckCircle className="w-5 h-5" /> : entry.round}
                     </div>
                     <div className="flex-1">
-                      <p className="font-medium text-gray-900">Round {round}</p>
+                      <p className="font-medium text-gray-900">Round {entry.round}</p>
                       <p className="text-sm text-gray-600">
-                        {isPast ? 'Completed' : isCurrent ? 'In Progress' : 'Upcoming'}
+                        {entry.isCompleted
+                          ? 'Completed'
+                          : isCirclePending
+                            ? 'Starts after all members acknowledge'
+                            : entry.isCurrent
+                              ? isDue
+                                ? `Due now since ${formatFlowTimestamp(entry.dueAt)}`
+                                : `Due on ${formatFlowTimestamp(entry.dueAt)}`
+                              : `Scheduled for ${formatFlowTimestamp(entry.dueAt)}`}
                       </p>
                     </div>
                   </div>
@@ -219,9 +415,23 @@ export default function CircleDetails() {
           <div className="card mt-6">
             <div className="flex items-start space-x-3">
               <FileText className="w-5 h-5 text-primary-600 mt-1" />
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">Agreement Record</h2>
-                <p className="text-sm text-gray-600 break-all">{agreementCid}</p>
+              <div className="w-full">
+                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                  <div>
+                    <h2 className="text-xl font-semibold text-gray-900 mb-2">Agreement Record</h2>
+                    <p className="text-sm text-gray-600 break-all">{agreementCid}</p>
+                  </div>
+                  {isMember && isCirclePending && !currentMember?.depositPaid && (
+                    <button
+                      onClick={handleAcknowledgeAgreement}
+                      disabled={loading}
+                      className="btn-primary whitespace-nowrap"
+                    >
+                      {loading ? 'Acknowledging...' : 'Acknowledge Agreement'}
+                    </button>
+                  )}
+                </div>
+
                 {agreementLoading && (
                   <p className="text-sm text-gray-500 mt-3">Loading agreement details from Filecoin...</p>
                 )}
@@ -229,7 +439,7 @@ export default function CircleDetails() {
                   <p className="text-sm text-red-600 mt-3">{agreementError}</p>
                 )}
                 {agreement && (
-                  <div className="mt-4 space-y-3">
+                  <div className="mt-4 space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                       <div>
                         <p className="text-gray-600">Stored Terms</p>
@@ -251,6 +461,45 @@ export default function CircleDetails() {
                           {((agreement.rules?.penaltyRate || 0) * 100).toFixed(0)}%
                         </p>
                       </div>
+                      <div>
+                        <p className="text-gray-600">Created On</p>
+                        <p className="font-medium text-gray-900">
+                          {formatFlowTimestamp(currentCircle.createdAt)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600">Activation Date</p>
+                        <p className="font-medium text-gray-900">
+                          {activationTime
+                            ? formatFlowTimestamp(activationTime)
+                            : 'Pending all acknowledgements'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600">First Due Date</p>
+                        <p className="font-medium text-gray-900">
+                          {firstDueTime
+                            ? formatFlowTimestamp(firstDueTime)
+                            : 'Scheduled after activation'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600">Acknowledgement Progress</p>
+                        <p className="font-medium text-gray-900">
+                          {acknowledgementCount}/{membersList.length} members acknowledged
+                        </p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="text-sm text-gray-600 mb-2">Round-by-round payment schedule</p>
+                      <ul className="space-y-1 text-sm text-gray-900">
+                        {roundSchedule.map((entry) => (
+                          <li key={`round-due-${entry.round}`}>
+                            Round {entry.round}: {entry.dueAt ? formatFlowTimestamp(entry.dueAt) : 'Pending activation'}
+                          </li>
+                        ))}
+                      </ul>
                     </div>
 
                     {agreement.members?.length > 0 && (
@@ -274,11 +523,18 @@ export default function CircleDetails() {
 
         <div className="mt-6 flex justify-center">
           <button
-            onClick={() => setShowPaymentModal(true)}
-            disabled={!isMember}
+            onClick={handleOpenContribution}
             className="btn-primary px-8 py-3 text-lg"
           >
-            {isMember ? 'Make Contribution' : 'Only Members Can Contribute'}
+            {!isMember
+              ? 'Only Members Can Contribute'
+              : isCirclePending
+                ? 'Waiting For Member Acknowledgements'
+                : isCircleCompleted
+                  ? 'Circle Completed'
+                : nextDueAt && !isPaymentDue
+                  ? `Payment Opens ${formatFlowTimestamp(nextDueAt, 'PPP')}`
+                  : 'Make Contribution'}
           </button>
         </div>
 
@@ -295,7 +551,11 @@ export default function CircleDetails() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Round</span>
-                  <span className="font-semibold">{(currentCircle.currentRound || 0) + 1}</span>
+                  <span className="font-semibold">{Number(currentCircle.currentRound || 0) + 1}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Due Date</span>
+                  <span className="font-semibold">{formatFlowTimestamp(nextDueAt)}</span>
                 </div>
               </div>
               <div className="flex space-x-3">

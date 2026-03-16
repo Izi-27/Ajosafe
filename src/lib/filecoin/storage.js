@@ -40,19 +40,37 @@ function normalizeCid(value) {
 }
 
 export async function storeAgreementOnFilecoin(agreementData) {
+  const createdAt = new Date().toISOString();
   const agreement = {
     circleName: agreementData.name,
     description: agreementData.description || '',
-    createdAt: new Date().toISOString(),
+    createdAt,
     members: agreementData.members,
     rules: {
       contributionAmount: agreementData.contributionAmount,
       frequency: agreementData.frequency,
+      frequencySeconds: agreementData.frequencySeconds || null,
       totalRounds: agreementData.totalRounds,
       penaltyRate: agreementData.penaltyRate,
       maxMissesBeforeExpulsion: agreementData.maxMissesBeforeExpulsion || 3,
       payoutOrder: agreementData.payoutOrder,
     },
+    lifecycle: {
+      status: 'pending_acknowledgement',
+      createdAt,
+      activationDate: null,
+      acknowledgementRequirement: 'all_members',
+    },
+    paymentSchedule: {
+      firstDueDate: null,
+      roundDueDates: [],
+      activationRule: 'all_members_must_acknowledge_before_activation',
+    },
+    acknowledgements: agreementData.members.map((member) => ({
+      address: member.address,
+      name: member.name,
+      status: member.address === agreementData.creatorAddress ? 'acknowledged' : 'pending',
+    })),
     terms: agreementData.termsText || 'Standard AjoSafe terms and conditions apply.',
     signatures: [],
   };

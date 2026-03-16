@@ -426,7 +426,10 @@ export default function CreateCircle() {
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p className="text-sm text-blue-900">
-                  <strong>Note:</strong> Once created, circle rules cannot be changed. All members must pay a security deposit of ${parseFloat(formData.contributionAmount) * 2} before the circle starts.
+                  <strong>Note:</strong> Once created, circle rules cannot be changed. The circle will stay pending until all listed members acknowledge the agreement.
+                </p>
+                <p className="text-sm text-blue-900 mt-2">
+                  After all acknowledgements are complete, the circle becomes active and the first payment due date is scheduled automatically based on the selected frequency.
                 </p>
                 <p className="text-sm text-blue-900 mt-2">
                   Circle creation also stores the agreement on Filecoin through Synapse. If Synapse environment variables are missing in the deployment, creation will fail before the Flow transaction is sent.
@@ -461,7 +464,7 @@ export default function CreateCircle() {
               >
                 {loading ? (
                   <>
-                    <span>Creating...</span>
+                    <span>Uploading agreement and creating circle...</span>
                   </>
                 ) : (
                   <>

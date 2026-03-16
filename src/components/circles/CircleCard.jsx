@@ -1,14 +1,17 @@
 import Link from 'next/link';
-import { formatCurrency, formatTimeDistance, secondsToFrequency } from '@/lib/utils/formatters';
+import { formatCurrency, formatTimeDistance, flowTimestampToDate, secondsToFrequency } from '@/lib/utils/formatters';
 import { Users, Calendar, DollarSign, TrendingUp } from 'lucide-react';
 
 export default function CircleCard({ circle }) {
+  const nextDueDate = flowTimestampToDate(circle.nextPayoutTime);
+
   const getStatusColor = (status) => {
     const colors = {
       0: 'bg-green-100 text-green-800',
-      1: 'bg-yellow-100 text-yellow-800',
+      1: 'bg-orange-100 text-orange-800',
       2: 'bg-blue-100 text-blue-800',
       3: 'bg-gray-100 text-gray-800',
+      4: 'bg-yellow-100 text-yellow-800',
     };
     return colors[status] || colors[0];
   };
@@ -19,6 +22,7 @@ export default function CircleCard({ circle }) {
       1: 'Paused',
       2: 'Completed',
       3: 'Dissolved',
+      4: 'Pending Acknowledgement',
     };
     return texts[status] || 'Unknown';
   };
@@ -94,11 +98,11 @@ export default function CircleCard({ circle }) {
         </div>
       </div>
 
-      {circle.nextPayoutTime && (
+      {nextDueDate && (
         <div className="mb-4 p-3 bg-blue-50 rounded-lg">
-          <p className="text-xs text-blue-600 font-medium">Next Payout</p>
+          <p className="text-xs text-blue-600 font-medium">Next Due Date</p>
           <p className="text-sm text-blue-900">
-            {formatTimeDistance(new Date(circle.nextPayoutTime * 1000))}
+            {formatTimeDistance(nextDueDate)}
           </p>
         </div>
       )}

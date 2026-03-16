@@ -1,6 +1,8 @@
 access(all) contract AjoCircle {
 
     access(all) event CircleCreated(circleId: UInt64, creator: Address, name: String)
+    access(all) event AgreementAcknowledged(circleId: UInt64, member: Address)
+    access(all) event CircleActivated(circleId: UInt64, activatedAt: UFix64, firstDueAt: UFix64)
     access(all) event ContributionMade(circleId: UInt64, member: Address, round: UInt64, amount: UFix64)
     access(all) event PayoutExecuted(circleId: UInt64, recipient: Address, round: UInt64)
     access(all) event MemberDefaulted(circleId: UInt64, member: Address, missedRound: UInt64)
@@ -12,6 +14,7 @@ access(all) contract AjoCircle {
         access(all) case PAUSED
         access(all) case COMPLETED
         access(all) case DISSOLVED
+        access(all) case PENDING_ACKNOWLEDGEMENT
     }
 
     access(all) enum MemberStatus: UInt8 {
@@ -59,6 +62,10 @@ access(all) contract AjoCircle {
 
         access(all) fun setStatus(status: MemberStatus) {
             self.status = status
+        }
+
+        access(all) fun markAgreementAcknowledged() {
+            self.depositPaid = true
         }
     }
 
@@ -122,7 +129,7 @@ access(all) contract AjoCircle {
             self.config = config
             self.creator = creator
             self.members = {}
-            self.status = CircleStatus.ACTIVE
+            self.status = CircleStatus.PENDING_ACKNOWLEDGEMENT
             self.currentRound = 0
             self.totalCollected = 0.0
             self.createdAt = getCurrentBlock().timestamp
@@ -148,11 +155,16 @@ access(all) contract AjoCircle {
             self.totalCollected = self.totalCollected + amount
         }
 
-        access(all) fun recordPayout(round: UInt64, recipient: Address) {
-            self.roundPayouts[round] = recipient
-            self.currentRound = round
+        access(all) fun activate() {
+            self.status = CircleStatus.ACTIVE
             self.lastPayoutTime = getCurrentBlock().timestamp
             self.nextPayoutTime = self.lastPayoutTime! + UFix64(self.config.contributionFrequency)
+        }
+
+        access(all) fun recordPayout(round: UInt64, recipient: Address, nextContributionDueAt: UFix64?) {
+            self.roundPayouts[round] = recipient
+            self.currentRound = round
+            self.nextPayoutTime = nextContributionDueAt
         }
 
         access(all) fun complete() {
@@ -192,6 +204,7 @@ access(all) contract AjoCircle {
             memberAddresses.length == memberPhones.length: "Member phones length mismatch"
             memberAddresses.length == memberEmails.length: "Member emails length mismatch"
             UInt64(memberAddresses.length) == totalRounds: "Total rounds must equal member count"
+            self.containsAddress(memberAddresses, address: creator): "Creator must be included in the member list"
             self.hasUniqueAddresses(memberAddresses): "Duplicate member addresses are not allowed"
         }
 
@@ -216,13 +229,18 @@ access(all) contract AjoCircle {
 
         var i = 0
         while i < memberAddresses.length {
-            let member = Member(
+            var member = Member(
                 address: memberAddresses[i],
                 name: memberNames[i],
                 phone: memberPhones[i],
                 email: memberEmails[i],
                 depositAmount: securityDeposit
             )
+
+            if memberAddresses[i] == creator {
+                member.markAgreementAcknowledged()
+            }
+
             circle.addMember(member: member)
             self.trackUserCircle(address: memberAddresses[i], circleId: circleId)
             i = i + 1
@@ -239,6 +257,36 @@ access(all) contract AjoCircle {
         return circleId
     }
 
+    access(all) fun acknowledgeAgreement(circleId: UInt64, member: Address) {
+        pre {
+            self.circles.containsKey(circleId): "Circle not found"
+        }
+
+        let circle = self.circles[circleId]!
+        assert(circle.members.containsKey(member), message: "Not a member of this circle")
+        assert(circle.status == CircleStatus.PENDING_ACKNOWLEDGEMENT, message: "Circle is already active")
+
+        var updatedCircle = circle
+        var currentMember = updatedCircle.members[member]!
+        assert(!currentMember.depositPaid, message: "Agreement already acknowledged")
+
+        currentMember.markAgreementAcknowledged()
+        updatedCircle.members[member] = currentMember
+
+        emit AgreementAcknowledged(circleId: circleId, member: member)
+
+        if self.checkAllMembersAcknowledged(circle: updatedCircle) {
+            updatedCircle.activate()
+            emit CircleActivated(
+                circleId: circleId,
+                activatedAt: updatedCircle.lastPayoutTime!,
+                firstDueAt: updatedCircle.nextPayoutTime!
+            )
+        }
+
+        self.circles[circleId] = updatedCircle
+    }
+
     access(all) fun contribute(circleId: UInt64, member: Address, round: UInt64, amount: UFix64) {
         pre {
             self.circles.containsKey(circleId): "Circle not found"
@@ -247,6 +295,9 @@ access(all) contract AjoCircle {
         let circle = self.circles[circleId]!
         assert(circle.members.containsKey(member), message: "Not a member of this circle")
         assert(circle.status == CircleStatus.ACTIVE, message: "Circle is not active")
+        let contributionDueAt = self.getCurrentContributionDueAt(circle: circle)
+        assert(contributionDueAt != nil, message: "Contribution schedule is not active yet")
+        assert(getCurrentBlock().timestamp >= contributionDueAt!, message: "Cannot make payment until the due date")
         assert(round == circle.currentRound + 1, message: "Invalid round")
         assert(amount == circle.config.contributionAmount, message: "Incorrect contribution amount")
 
@@ -276,6 +327,14 @@ access(all) contract AjoCircle {
 
         let circle = self.circles[circleId]!
         assert(circle.members.containsKey(member), message: "Member not found")
+        assert(circle.status == CircleStatus.ACTIVE, message: "Circle is not active")
+        assert(round == circle.currentRound + 1, message: "Can only report the current round")
+
+        let contributionDueAt = self.getCurrentContributionDueAt(circle: circle)
+        assert(contributionDueAt != nil, message: "No contribution is due yet")
+
+        let missedPaymentDeadline = contributionDueAt! + UFix64(circle.config.gracePeriod)
+        assert(getCurrentBlock().timestamp > missedPaymentDeadline, message: "Grace period has not ended")
 
         if !circle.roundContributions.containsKey(round) || !circle.roundContributions[round]!.containsKey(member) {
             var updatedCircle = circle
@@ -336,7 +395,17 @@ access(all) contract AjoCircle {
         let recipient = circle.config.payoutOrder[recipientIndex]
 
         var updatedCircle = circle
-        updatedCircle.recordPayout(round: round, recipient: recipient)
+        var nextContributionDueAt: UFix64? = nil
+
+        if round < updatedCircle.config.totalRounds {
+            nextContributionDueAt = self.getRoundDueAt(circle: updatedCircle, round: round + 1)
+        }
+
+        updatedCircle.recordPayout(
+            round: round,
+            recipient: recipient,
+            nextContributionDueAt: nextContributionDueAt
+        )
 
         if round == updatedCircle.config.totalRounds {
             updatedCircle.complete()
@@ -368,6 +437,34 @@ access(all) contract AjoCircle {
         return true
     }
 
+    access(self) view fun checkAllMembersAcknowledged(circle: Circle): Bool {
+        for memberAddress in circle.members.keys {
+            let member = circle.members[memberAddress]!
+            if !member.depositPaid {
+                return false
+            }
+        }
+
+        return true
+    }
+
+    access(self) view fun getRoundDueAt(circle: Circle, round: UInt64): UFix64 {
+        let scheduleAnchor = circle.lastPayoutTime ?? circle.createdAt
+        return scheduleAnchor + UFix64(circle.config.contributionFrequency * round)
+    }
+
+    access(self) view fun getCurrentContributionDueAt(circle: Circle): UFix64? {
+        if circle.status != CircleStatus.ACTIVE {
+            return nil
+        }
+
+        if circle.nextPayoutTime != nil {
+            return circle.nextPayoutTime
+        }
+
+        return self.getRoundDueAt(circle: circle, round: circle.currentRound + 1)
+    }
+
     access(self) fun generatePayoutOrder(_ members: [Address]): [Address] {
         var payoutOrder = members
         var i = payoutOrder.length - 1
@@ -395,6 +492,16 @@ access(all) contract AjoCircle {
         }
 
         return true
+    }
+
+    access(self) view fun containsAddress(_ members: [Address], address: Address): Bool {
+        for member in members {
+            if member == address {
+                return true
+            }
+        }
+
+        return false
     }
 
     access(self) fun trackUserCircle(address: Address, circleId: UInt64) {

@@ -55,3 +55,46 @@ export function calculateSecurityDeposit(amount) {
 export function formatPercentage(value) {
   return `${(value * 100).toFixed(0)}%`;
 }
+
+export function normalizeFlowTimestamp(value) {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  if (typeof value === 'number') {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const parsed = parseFloat(value);
+    return Number.isNaN(parsed) ? null : parsed;
+  }
+
+  const parsed = parseFloat(String(value));
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
+export function flowTimestampToDate(value) {
+  const normalized = normalizeFlowTimestamp(value);
+
+  if (normalized === null) {
+    return null;
+  }
+
+  return new Date(normalized * 1000);
+}
+
+export function formatFlowTimestamp(value, formatStr = 'PPP p') {
+  const date = flowTimestampToDate(value);
+  return date ? format(date, formatStr) : 'Pending';
+}
+
+export function isFlowTimestampDue(value) {
+  const normalized = normalizeFlowTimestamp(value);
+
+  if (normalized === null) {
+    return false;
+  }
+
+  return Date.now() >= normalized * 1000;
+}

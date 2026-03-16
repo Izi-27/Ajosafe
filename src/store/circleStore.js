@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { getUserCirclesQuery, getCircleQuery } from '@/lib/flow/queries/getCircle';
 import { createCircleTransaction } from '@/lib/flow/transactions/createCircle';
 import { contributeTransaction } from '@/lib/flow/transactions/contribute';
+import { acknowledgeAgreementTransaction } from '@/lib/flow/transactions/acknowledgeAgreement';
 import { storeAgreementOnFilecoin, createAgreementAcknowledgement } from '@/lib/filecoin/storage';
 import { frequencyToSeconds } from '@/lib/utils/formatters';
 
@@ -51,9 +52,11 @@ const useCircleStore = create((set, get) => ({
         description: circleData.description,
         contributionAmount: circleData.contributionAmount,
         frequency: circleData.frequency,
+        frequencySeconds: frequencyToSeconds(circleData.frequency),
         totalRounds: circleData.totalRounds,
         penaltyRate: circleData.penaltyRate,
         members: circleData.members,
+        creatorAddress: circleData.members[0]?.address || null,
         payoutOrder: circleData.members.map(m => m.address),
       });
 
@@ -95,6 +98,36 @@ const useCircleStore = create((set, get) => ({
         message = 'Agreement storage is not configured in this deployment yet. Add the Synapse environment variables before creating circles.';
       }
 
+      set({ error: message, loading: false });
+      throw new Error(message);
+    }
+  },
+
+  acknowledgeAgreement: async ({ circleId, agreementCid, memberAddress, memberName }) => {
+    set({ loading: true, error: null });
+    try {
+      await acknowledgeAgreementTransaction(circleId);
+      await get().fetchCircleDetails(circleId);
+
+      let warning = null;
+      let acknowledgementCid = null;
+
+      try {
+        acknowledgementCid = await createAgreementAcknowledgement({
+          circleId,
+          agreementCid,
+          memberAddress,
+          memberName,
+          role: 'member',
+        });
+      } catch (acknowledgementError) {
+        warning = 'Agreement acknowledged on Flow, but the Filecoin acknowledgement record could not be saved.';
+      }
+
+      set({ loading: false });
+      return { acknowledgementCid, warning };
+    } catch (error) {
+      const message = error.message || 'Failed to acknowledge agreement';
       set({ error: message, loading: false });
       throw new Error(message);
     }
