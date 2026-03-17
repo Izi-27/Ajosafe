@@ -6,6 +6,19 @@ import { acknowledgeAgreementTransaction } from '@/lib/flow/transactions/acknowl
 import { storeAgreementOnFilecoin, createAgreementAcknowledgement } from '@/lib/filecoin/storage';
 import { frequencyToSeconds } from '@/lib/utils/formatters';
 
+const OPTIONAL_ARCHIVE_TIMEOUT_MS = 15000;
+
+function withTimeout(promise, timeoutMs, timeoutMessage) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      setTimeout(() => {
+        reject(new Error(timeoutMessage));
+      }, timeoutMs);
+    }),
+  ]);
+}
+
 const useCircleStore = create((set, get) => ({
   circles: [],
   currentCircle: null,
@@ -74,19 +87,28 @@ const useCircleStore = create((set, get) => ({
         memberEmails: circleData.members.map(m => m.email || null),
       });
 
+      if (circleId === undefined || circleId === null) {
+        throw new Error('Circle transaction was sealed, but no circle ID was returned.');
+      }
+
       let agreementAcknowledgementCid = null;
       let warning = null;
 
       try {
-        agreementAcknowledgementCid = await createAgreementAcknowledgement({
-          circleId,
-          agreementCid: cid,
-          memberAddress: circleData.members[0]?.address,
-          memberName: circleData.members[0]?.name,
-          role: 'creator',
-        });
+        agreementAcknowledgementCid = await withTimeout(
+          createAgreementAcknowledgement({
+            circleId,
+            agreementCid: cid,
+            memberAddress: circleData.members[0]?.address,
+            memberName: circleData.members[0]?.name,
+            role: 'creator',
+          }),
+          OPTIONAL_ARCHIVE_TIMEOUT_MS,
+          'Creator acknowledgement archival timed out'
+        );
       } catch (acknowledgementError) {
-        warning = 'Circle created, but the creator acknowledgement record could not be saved to Filecoin.';
+        warning =
+          'Circle created, but the creator acknowledgement record could not be saved to Filecoin right now.';
       }
 
       set({ loading: false });
@@ -113,15 +135,20 @@ const useCircleStore = create((set, get) => ({
       let acknowledgementCid = null;
 
       try {
-        acknowledgementCid = await createAgreementAcknowledgement({
-          circleId,
-          agreementCid,
-          memberAddress,
-          memberName,
-          role: 'member',
-        });
+        acknowledgementCid = await withTimeout(
+          createAgreementAcknowledgement({
+            circleId,
+            agreementCid,
+            memberAddress,
+            memberName,
+            role: 'member',
+          }),
+          OPTIONAL_ARCHIVE_TIMEOUT_MS,
+          'Agreement acknowledgement archival timed out'
+        );
       } catch (acknowledgementError) {
-        warning = 'Agreement acknowledged on Flow, but the Filecoin acknowledgement record could not be saved.';
+        warning =
+          'Agreement acknowledged on Flow, but the Filecoin acknowledgement record could not be saved right now.';
       }
 
       set({ loading: false });
