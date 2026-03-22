@@ -4,6 +4,7 @@ import Layout from '@/components/layout/Layout';
 import useCircleStore from '@/store/circleStore';
 import useAuthStore from '@/store/authStore';
 import {
+  formatAddress,
   formatCurrency,
   formatFlowTimestamp,
   isFlowTimestampDue,
@@ -65,6 +66,19 @@ function formatAgreementError(error) {
 
 function getStatusMeta(status) {
   return STATUS_META[Number(status)] || STATUS_META[4];
+}
+
+function normalizeAddress(value) {
+  if (!value || typeof value !== 'string') {
+    return '';
+  }
+
+  const trimmed = value.trim().toLowerCase();
+  if (!trimmed) {
+    return '';
+  }
+
+  return trimmed.startsWith('0x') ? trimmed : `0x${trimmed}`;
 }
 
 function buildRoundSchedule(circle) {
@@ -155,13 +169,24 @@ export default function CircleDetails() {
     [currentCircle?.members]
   );
 
-  const currentMember = user?.addr ? currentCircle?.members?.[user.addr] : null;
+  const normalizedUserAddress = normalizeAddress(user?.addr);
+  const currentMember = useMemo(() => {
+    if (!normalizedUserAddress) {
+      return null;
+    }
+
+    return (
+      membersList.find((member) => normalizeAddress(member?.address) === normalizedUserAddress) || null
+    );
+  }, [membersList, normalizedUserAddress]);
+
   const statusMeta = getStatusMeta(currentCircle?.status);
   const frequency = secondsToFrequency(currentCircle?.config?.contributionFrequency);
   const agreementCid = currentCircle?.config?.agreementCID;
   const progress =
     ((Number(currentCircle?.currentRound || 0) / Number(currentCircle?.config?.totalRounds || 1)) || 0) * 100;
   const isMember = !!currentMember;
+  const needsAcknowledgement = isMember && !currentMember?.depositPaid;
   const status = Number(currentCircle?.status);
   const isCirclePending = status === 4;
   const isCircleActive = status === 0;
@@ -177,6 +202,7 @@ export default function CircleDetails() {
     activationTime !== null
       ? activationTime + Number(currentCircle?.config?.contributionFrequency || 0)
       : null;
+  const memberAddressList = membersList.map((member) => member?.address).filter(Boolean);
 
   const handleAcknowledgeAgreement = async () => {
     if (!isMember) {
@@ -281,6 +307,41 @@ export default function CircleDetails() {
             </span>
           </div>
         </div>
+
+        {isCirclePending && (
+          <div className="mb-6 rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+            <p className="text-sm text-yellow-900">
+              Connected wallet: <span className="font-semibold">{formatAddress(user?.addr || '')}</span>
+            </p>
+            {!isMember ? (
+              <>
+                <p className="mt-2 text-sm text-yellow-900">
+                  This wallet is not in the circle member list. Switch wallet to acknowledge the agreement.
+                </p>
+                <p className="mt-2 text-xs text-yellow-800 break-all">
+                  Members: {memberAddressList.join(', ')}
+                </p>
+              </>
+            ) : needsAcknowledgement ? (
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <p className="text-sm text-yellow-900">
+                  Your acknowledgement is pending. Click below to activate this circle.
+                </p>
+                <button
+                  onClick={handleAcknowledgeAgreement}
+                  disabled={loading}
+                  className="btn-primary whitespace-nowrap"
+                >
+                  {loading ? 'Acknowledging...' : 'Acknowledge Agreement'}
+                </button>
+              </div>
+            ) : (
+              <p className="mt-2 text-sm text-yellow-900">
+                You already acknowledged. Waiting for other members to acknowledge.
+              </p>
+            )}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
           <div className="card">
@@ -421,7 +482,7 @@ export default function CircleDetails() {
                     <h2 className="text-xl font-semibold text-gray-900 mb-2">Agreement Record</h2>
                     <p className="text-sm text-gray-600 break-all">{agreementCid}</p>
                   </div>
-                  {isMember && isCirclePending && !currentMember?.depositPaid && (
+                  {isMember && isCirclePending && needsAcknowledgement && (
                     <button
                       onClick={handleAcknowledgeAgreement}
                       disabled={loading}
@@ -522,20 +583,33 @@ export default function CircleDetails() {
         )}
 
         <div className="mt-6 flex justify-center">
-          <button
-            onClick={handleOpenContribution}
-            className="btn-primary px-8 py-3 text-lg"
-          >
-            {!isMember
-              ? 'Only Members Can Contribute'
-              : isCirclePending
-                ? 'Waiting For Member Acknowledgements'
-                : isCircleCompleted
-                  ? 'Circle Completed'
-                : nextDueAt && !isPaymentDue
-                  ? `Payment Opens ${formatFlowTimestamp(nextDueAt, 'PPP')}`
-                  : 'Make Contribution'}
-          </button>
+          <div className="flex flex-wrap justify-center gap-3">
+            {isCirclePending && needsAcknowledgement && (
+              <button
+                onClick={handleAcknowledgeAgreement}
+                disabled={loading}
+                className="btn-primary px-8 py-3 text-lg"
+              >
+                {loading ? 'Acknowledging...' : 'Acknowledge Agreement'}
+              </button>
+            )}
+            <button
+              onClick={handleOpenContribution}
+              className="btn-primary px-8 py-3 text-lg"
+            >
+              {!isMember
+                ? 'Only Members Can Contribute'
+                : isCirclePending
+                  ? needsAcknowledgement
+                    ? 'Acknowledge Agreement To Continue'
+                    : 'Waiting For Member Acknowledgements'
+                  : isCircleCompleted
+                    ? 'Circle Completed'
+                  : nextDueAt && !isPaymentDue
+                    ? `Payment Opens ${formatFlowTimestamp(nextDueAt, 'PPP')}`
+                    : 'Make Contribution'}
+            </button>
+          </div>
         </div>
 
         {showPaymentModal && (
