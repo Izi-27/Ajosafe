@@ -1,9 +1,64 @@
 import Link from 'next/link';
-import { formatCurrency, formatTimeDistance, flowTimestampToDate, secondsToFrequency } from '@/lib/utils/formatters';
+import {
+  formatCurrency,
+  formatFlowTimestamp,
+  formatTimeDistance,
+  flowTimestampToDate,
+  isFlowTimestampDue,
+  secondsToFrequency,
+} from '@/lib/utils/formatters';
 import { Users, Calendar, DollarSign, TrendingUp } from 'lucide-react';
 
 export default function CircleCard({ circle }) {
   const nextDueDate = flowTimestampToDate(circle.nextPayoutTime);
+  const nextDueAt = circle.nextPayoutTime;
+  const isDue = isFlowTimestampDue(nextDueAt);
+  const members = Object.values(circle.members || {});
+  const memberCount = members.length;
+  const acknowledgementCount = members.filter((member) => member.depositPaid).length;
+
+  const parseCircleStatus = (status) => {
+    if (typeof status === 'number' && Number.isFinite(status)) {
+      return status;
+    }
+
+    if (typeof status === 'string') {
+      if (/^\d+$/.test(status)) {
+        return parseInt(status, 10);
+      }
+
+      const mapped = {
+        ACTIVE: 0,
+        PAUSED: 1,
+        COMPLETED: 2,
+        DISSOLVED: 3,
+        PENDING_ACKNOWLEDGEMENT: 4,
+      };
+
+      return mapped[status] ?? null;
+    }
+
+    if (status && typeof status === 'object') {
+      if ('rawValue' in status) {
+        return parseCircleStatus(status.rawValue);
+      }
+      if ('value' in status) {
+        return parseCircleStatus(status.value);
+      }
+      if ('case' in status) {
+        return parseCircleStatus(status.case);
+      }
+    }
+
+    return null;
+  };
+
+  const statusCode = parseCircleStatus(circle.status);
+  const isPendingAcknowledgement =
+    statusCode === 4 ||
+    (statusCode === null && acknowledgementCount < memberCount && !nextDueAt);
+  const normalizedStatusCode = isPendingAcknowledgement ? 4 : statusCode ?? 0;
+  const isCompleted = normalizedStatusCode === 2;
 
   const getStatusColor = (status) => {
     const colors = {
@@ -27,9 +82,28 @@ export default function CircleCard({ circle }) {
     return texts[status] || 'Unknown';
   };
 
-  const memberCount = Object.keys(circle.members || {}).length;
   const frequency = secondsToFrequency(circle.config?.contributionFrequency);
   const progress = ((circle.currentRound || 0) / (circle.config?.totalRounds || 1)) * 100;
+
+  const nextDueSummary = isPendingAcknowledgement
+    ? 'Pending activation'
+    : isCompleted
+      ? 'No further payments'
+      : !nextDueDate
+        ? 'Schedule pending'
+        : isDue
+          ? `Due now (${formatFlowTimestamp(nextDueAt)})`
+          : formatTimeDistance(nextDueDate);
+
+  const nextDueDetail = isPendingAcknowledgement
+    ? `${acknowledgementCount}/${memberCount} members acknowledged`
+    : isCompleted
+      ? 'Circle completed successfully'
+      : !nextDueDate
+        ? 'Waiting for schedule update'
+        : isDue
+          ? 'Contribution window is open'
+          : `Opens ${formatFlowTimestamp(nextDueAt, 'PPP p')}`;
 
   return (
     <div className="card group hover:shadow-lg">
@@ -42,8 +116,8 @@ export default function CircleCard({ circle }) {
             {circle.config?.description || 'No description'}
           </p>
         </div>
-        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(circle.status)}`}>
-          {getStatusText(circle.status)}
+        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(normalizedStatusCode)}`}>
+          {getStatusText(normalizedStatusCode)}
         </span>
       </div>
 
@@ -98,18 +172,15 @@ export default function CircleCard({ circle }) {
         </div>
       </div>
 
-      {nextDueDate && (
-        <div className="mb-4 p-3 bg-blue-50 rounded-lg">
-          <p className="text-xs text-blue-600 font-medium">Next Due Date</p>
-          <p className="text-sm text-blue-900">
-            {formatTimeDistance(nextDueDate)}
-          </p>
-        </div>
-      )}
+      <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+        <p className="text-xs text-blue-600 font-medium">Next Due Date</p>
+        <p className="text-sm text-blue-900 font-semibold">{nextDueSummary}</p>
+        <p className="text-xs text-blue-700 mt-1">{nextDueDetail}</p>
+      </div>
 
       <div className="flex justify-between items-center pt-4 border-t border-gray-200">
         <div className="flex -space-x-2">
-          {Object.values(circle.members || {}).slice(0, 4).map((member, idx) => (
+          {members.slice(0, 4).map((member, idx) => (
             <div
               key={idx}
               className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 border-2 border-white flex items-center justify-center text-white text-xs font-semibold"

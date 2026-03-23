@@ -234,6 +234,13 @@ export default function CircleDetails() {
   const isCircleCompleted = statusCode === 2;
   const nextDueAt = currentCircle?.nextPayoutTime;
   const isPaymentDue = isFlowTimestampDue(nextDueAt);
+  const isContributionBlocked =
+    !isMember ||
+    isCirclePending ||
+    isCircleCompleted ||
+    !currentMember?.depositPaid ||
+    !nextDueAt ||
+    !isPaymentDue;
   const roundSchedule = useMemo(() => buildRoundSchedule(currentCircle), [currentCircle]);
   const activationTime = !isCirclePending
     ? normalizeFlowTimestamp(currentCircle?.lastPayoutTime)
@@ -243,6 +250,19 @@ export default function CircleDetails() {
       ? activationTime + Number(currentCircle?.config?.contributionFrequency || 0)
       : null;
   const memberAddressList = membersList.map((member) => member?.address).filter(Boolean);
+  const contributionBlockedMessage = !isMember
+    ? 'Only listed circle members can contribute.'
+    : isCirclePending
+      ? needsAcknowledgement
+        ? 'Acknowledge the agreement first to activate this circle.'
+        : 'Waiting for all members to acknowledge before payments open.'
+      : isCircleCompleted
+        ? 'This circle is completed. No further contributions are required.'
+        : !nextDueAt
+          ? 'Payment schedule is not ready yet.'
+          : !isPaymentDue
+            ? `Payment opens on ${formatFlowTimestamp(nextDueAt)}.`
+            : null;
 
   const handleAcknowledgeAgreement = async () => {
     if (!isMember) {
@@ -321,7 +341,7 @@ export default function CircleDetails() {
     }
   };
 
-  if (loading || !currentCircle) {
+  if (!currentCircle) {
     return (
       <Layout>
         <div className="max-w-7xl mx-auto px-4 py-20 text-center">
@@ -622,7 +642,7 @@ export default function CircleDetails() {
           </div>
         )}
 
-        <div className="mt-6 flex justify-center">
+        <div className="mt-6 flex flex-col items-center">
           <div className="flex flex-wrap justify-center gap-3">
             {isCirclePending && needsAcknowledgement && (
               <button
@@ -635,7 +655,8 @@ export default function CircleDetails() {
             )}
             <button
               onClick={handleOpenContribution}
-              className="btn-primary px-8 py-3 text-lg"
+              disabled={isContributionBlocked}
+              className="btn-primary px-8 py-3 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {!isMember
                 ? 'Only Members Can Contribute'
@@ -650,6 +671,9 @@ export default function CircleDetails() {
                     : 'Make Contribution'}
             </button>
           </div>
+          {contributionBlockedMessage && (
+            <p className="mt-3 text-sm text-gray-600 text-center">{contributionBlockedMessage}</p>
+          )}
         </div>
 
         {showPaymentModal && (

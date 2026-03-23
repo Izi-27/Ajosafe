@@ -10,7 +10,7 @@ import { validateCircleData, isValidFlowAddress } from '@/lib/utils/validators';
 export default function CreateCircle() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuthStore();
-  const { createCircle, loading } = useCircleStore();
+  const { createCircle, loading, progressMessage } = useCircleStore();
   
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -434,6 +434,11 @@ export default function CreateCircle() {
                 <p className="text-sm text-blue-900 mt-2">
                   Circle creation also stores the agreement on Filecoin through Synapse. If Synapse environment variables are missing in the deployment, creation will fail before the Flow transaction is sent.
                 </p>
+                {loading && (
+                  <p className="text-sm text-blue-900 mt-3 font-medium">
+                    Progress: {progressMessage || 'Processing circle creation...'}
+                  </p>
+                )}
               </div>
             </div>
           )}
@@ -464,7 +469,7 @@ export default function CreateCircle() {
               >
                 {loading ? (
                   <>
-                    <span>Uploading agreement and creating circle...</span>
+                    <span>{progressMessage || 'Uploading agreement and creating circle...'}</span>
                   </>
                 ) : (
                   <>

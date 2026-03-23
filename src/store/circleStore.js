@@ -24,6 +24,7 @@ const useCircleStore = create((set, get) => ({
   currentCircle: null,
   loading: false,
   error: null,
+  progressMessage: null,
 
   fetchUserCircles: async (address) => {
     set({ loading: true, error: null });
@@ -53,13 +54,22 @@ const useCircleStore = create((set, get) => ({
     }
   },
 
-  createCircle: async (circleData) => {
-    set({ loading: true, error: null });
+  createCircle: async (circleData, onProgress) => {
+    const notifyProgress = (message) => {
+      set({ progressMessage: message });
+
+      if (typeof onProgress === 'function') {
+        onProgress(message);
+      }
+    };
+
+    set({ loading: true, error: null, progressMessage: 'Preparing circle request...' });
     try {
       if (circleData.members.length !== circleData.totalRounds) {
         throw new Error('Total rounds must match the number of members for the current payout model.');
       }
 
+      notifyProgress('Storing agreement on Filecoin...');
       const { cid } = await storeAgreementOnFilecoin({
         name: circleData.name,
         description: circleData.description,
@@ -73,6 +83,7 @@ const useCircleStore = create((set, get) => ({
         payoutOrder: circleData.members.map(m => m.address),
       });
 
+      notifyProgress('Agreement stored. Confirm the Flow transaction in your wallet...');
       const { circleId } = await createCircleTransaction({
         name: circleData.name,
         description: circleData.description || '',
@@ -91,6 +102,7 @@ const useCircleStore = create((set, get) => ({
         throw new Error('Circle transaction was sealed, but no circle ID was returned.');
       }
 
+      notifyProgress('Circle created on Flow. Finalizing acknowledgement archive...');
       let agreementAcknowledgementCid = null;
       let warning = null;
 
@@ -111,7 +123,8 @@ const useCircleStore = create((set, get) => ({
           'Circle created on Flow, but a secondary Filecoin acknowledgement record could not be saved right now.';
       }
 
-      set({ loading: false });
+      notifyProgress('Circle ready.');
+      set({ loading: false, progressMessage: null });
       return { circleId, agreementCid: cid, agreementAcknowledgementCid, warning };
     } catch (error) {
       let message = error.message || 'Failed to create circle';
@@ -120,7 +133,7 @@ const useCircleStore = create((set, get) => ({
         message = 'Agreement storage is not configured in this deployment yet. Add the Synapse environment variables before creating circles.';
       }
 
-      set({ error: message, loading: false });
+      set({ error: message, loading: false, progressMessage: null });
       throw new Error(message);
     }
   },
@@ -151,11 +164,11 @@ const useCircleStore = create((set, get) => ({
           'Agreement acknowledged on Flow, but a secondary Filecoin acknowledgement record could not be saved right now.';
       }
 
-      set({ loading: false });
+      set({ loading: false, progressMessage: null });
       return { acknowledgementCid, warning };
     } catch (error) {
       const message = error.message || 'Failed to acknowledge agreement';
-      set({ error: message, loading: false });
+      set({ error: message, loading: false, progressMessage: null });
       throw new Error(message);
     }
   },
@@ -166,14 +179,14 @@ const useCircleStore = create((set, get) => ({
       await contributeTransaction(circleId, round, amount);
       
       await get().fetchCircleDetails(circleId);
-      set({ loading: false });
+      set({ loading: false, progressMessage: null });
     } catch (error) {
-      set({ error: error.message, loading: false });
+      set({ error: error.message, loading: false, progressMessage: null });
       throw error;
     }
   },
 
-  clearError: () => set({ error: null }),
+  clearError: () => set({ error: null, progressMessage: null }),
 }));
 
 export default useCircleStore;
