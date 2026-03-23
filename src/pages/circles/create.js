@@ -232,6 +232,7 @@ export default function CreateCircle() {
                     onChange={handleInputChange}
                     className="input"
                   >
+                    <option value="daily">Daily</option>
                     <option value="weekly">Weekly</option>
                     <option value="biweekly">Bi-weekly</option>
                     <option value="monthly">Monthly</option>
