@@ -234,10 +234,16 @@ export default function CircleDetails() {
   const isCircleCompleted = statusCode === 2;
   const nextDueAt = currentCircle?.nextPayoutTime;
   const isPaymentDue = isFlowTimestampDue(nextDueAt);
+  const nextRound = Number(currentCircle?.currentRound || 0) + 1;
+  const hasAlreadyPaidCurrentRound =
+    isMember &&
+    Array.isArray(currentMember?.roundsPaid) &&
+    currentMember.roundsPaid.some((paidRound) => Number(paidRound) === nextRound);
   const isContributionBlocked =
     !isMember ||
     isCirclePending ||
     isCircleCompleted ||
+    hasAlreadyPaidCurrentRound ||
     !currentMember?.depositPaid ||
     !nextDueAt ||
     !isPaymentDue;
@@ -258,6 +264,8 @@ export default function CircleDetails() {
         : 'Waiting for all members to acknowledge before payments open.'
       : isCircleCompleted
         ? 'This circle is completed. No further contributions are required.'
+        : hasAlreadyPaidCurrentRound
+          ? `You already paid for round ${nextRound}. Waiting for other members.`
         : !nextDueAt
           ? 'Payment schedule is not ready yet.'
           : !isPaymentDue
@@ -308,6 +316,11 @@ export default function CircleDetails() {
       return;
     }
 
+    if (hasAlreadyPaidCurrentRound) {
+      toast.error(`You already paid for round ${nextRound}. Wait for other members.`);
+      return;
+    }
+
     if (!nextDueAt) {
       toast.error('Payment schedule is not ready yet.');
       return;
@@ -323,12 +336,16 @@ export default function CircleDetails() {
 
   const handleContribute = async () => {
     try {
+      if (hasAlreadyPaidCurrentRound) {
+        toast.error(`You already paid for round ${nextRound}. Wait for other members.`);
+        return;
+      }
+
       if (!nextDueAt || !isFlowTimestampDue(nextDueAt)) {
         toast.error(`You can't make payment until the due date: ${formatFlowTimestamp(nextDueAt)}`);
         return;
       }
 
-      const nextRound = Number(currentCircle?.currentRound || 0) + 1;
       await makeContribution(
         parseInt(id, 10),
         nextRound,
@@ -664,8 +681,10 @@ export default function CircleDetails() {
                   ? needsAcknowledgement
                     ? 'Acknowledge Agreement To Continue'
                     : 'Waiting For Member Acknowledgements'
-                  : isCircleCompleted
+                : isCircleCompleted
                     ? 'Circle Completed'
+                  : hasAlreadyPaidCurrentRound
+                    ? `Round ${nextRound} Already Paid`
                   : nextDueAt && !isPaymentDue
                     ? `Payment Opens ${formatFlowTimestamp(nextDueAt, 'PPP')}`
                     : 'Make Contribution'}

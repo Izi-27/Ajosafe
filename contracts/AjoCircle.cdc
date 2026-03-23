@@ -300,6 +300,12 @@ access(all) contract AjoCircle {
         assert(getCurrentBlock().timestamp >= contributionDueAt!, message: "Cannot make payment until the due date")
         assert(round == circle.currentRound + 1, message: "Invalid round")
         assert(amount == circle.config.contributionAmount, message: "Incorrect contribution amount")
+        if circle.roundContributions.containsKey(round) {
+            assert(
+                !circle.roundContributions[round]!.containsKey(member),
+                message: "Contribution already submitted for this round"
+            )
+        }
 
         var updatedCircle = circle
         var currentMember = updatedCircle.members[member]!

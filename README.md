@@ -222,6 +222,7 @@ npm run fund:filecoin-pay
 - [x] Retrieve and display stored agreement records
 - [x] Improve UX for long Filecoin-backed circle creation
 - [x] Add pending acknowledgement lifecycle UX (status + due-date guards)
+- [x] Add duplicate-contribution protection for current round (UI guard + contract check)
 - [x] Add auth options page for wallet-first + walletless rollout messaging
 - [ ] Finalize public demo flow, script, and submission materials
 
