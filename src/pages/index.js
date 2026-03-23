@@ -34,7 +34,7 @@ export default function Home() {
     {
       icon: Users,
       title: 'Onboarding Path',
-      description: 'Flow wallet login works now. Walletless login (Magic Link) is the next onboarding upgrade.',
+      description: 'Magic Link walletless login is now available, with Flow Wallet kept for full onchain actions.',
     },
     {
       icon: FileCheck,

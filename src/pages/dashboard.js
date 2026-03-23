@@ -9,16 +9,16 @@ import { PlusCircle, Loader2 } from 'lucide-react';
 
 export default function Dashboard() {
   const router = useRouter();
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, canTransact, authMethod, login } = useAuthStore();
   const { circles, loading, fetchUserCircles } = useCircleStore();
 
   useEffect(() => {
     if (!isAuthenticated) {
       router.push('/');
-    } else if (user?.addr) {
+    } else if (canTransact && user?.addr) {
       fetchUserCircles(user.addr);
     }
-  }, [isAuthenticated, user, router, fetchUserCircles]);
+  }, [isAuthenticated, canTransact, user, router, fetchUserCircles]);
 
   if (!isAuthenticated) {
     return null;
@@ -42,7 +42,18 @@ export default function Dashboard() {
           </Link>
         </div>
 
-        {loading ? (
+        {!canTransact ? (
+          <div className="max-w-2xl mx-auto text-center py-16">
+            <h2 className="text-2xl font-semibold text-gray-900 mb-3">Connect Flow Wallet To Continue</h2>
+            <p className="text-gray-600 mb-6">
+              You are signed in with {authMethod === 'magic_link' ? 'Magic Link' : 'an unsupported method'}. Connect
+              Flow Wallet to create circles and run onchain actions.
+            </p>
+            <button onClick={login} className="btn-primary">
+              Connect Flow Wallet
+            </button>
+          </div>
+        ) : loading ? (
           <div className="flex justify-center items-center py-20">
             <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
           </div>

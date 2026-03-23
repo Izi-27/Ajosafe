@@ -9,7 +9,7 @@ import { validateCircleData, isValidFlowAddress } from '@/lib/utils/validators';
 
 export default function CreateCircle() {
   const router = useRouter();
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, canTransact, login } = useAuthStore();
   const { createCircle, loading, progressMessage } = useCircleStore();
   
   const [step, setStep] = useState(1);
@@ -136,6 +136,22 @@ export default function CreateCircle() {
         <div className="max-w-2xl mx-auto px-4 py-20 text-center">
           <h2 className="text-2xl font-bold mb-4">Please connect your wallet</h2>
           <p className="text-gray-600">You need to be logged in to create a circle</p>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!canTransact) {
+    return (
+      <Layout>
+        <div className="max-w-2xl mx-auto px-4 py-20 text-center">
+          <h2 className="text-2xl font-bold mb-4">Connect Flow Wallet To Create A Circle</h2>
+          <p className="text-gray-600 mb-6">
+            You are logged in walletlessly. Connect Flow Wallet to submit circle transactions onchain.
+          </p>
+          <button onClick={login} className="btn-primary">
+            Connect Flow Wallet
+          </button>
         </div>
       </Layout>
     );

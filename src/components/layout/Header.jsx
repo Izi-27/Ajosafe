@@ -6,7 +6,8 @@ import { LogOut, User, Wallet } from 'lucide-react';
 
 export default function Header() {
   const router = useRouter();
-  const { user, isAuthenticated, logout } = useAuthStore();
+  const { user, isAuthenticated, authMethod, canTransact, logout } = useAuthStore();
+  const identityLabel = user?.addr ? formatAddress(user.addr) : user?.email || 'Walletless User';
 
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
@@ -32,16 +33,18 @@ export default function Header() {
                 >
                   Dashboard
                 </Link>
-                <Link
-                  href="/circles/create"
-                  className={`text-sm font-medium transition-colors ${
-                    router.pathname === '/circles/create'
-                      ? 'text-primary-600'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  Create Circle
-                </Link>
+                {canTransact && (
+                  <Link
+                    href="/circles/create"
+                    className={`text-sm font-medium transition-colors ${
+                      router.pathname === '/circles/create'
+                        ? 'text-primary-600'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Create Circle
+                  </Link>
+                )}
               </nav>
             )}
           </div>
@@ -52,7 +55,10 @@ export default function Header() {
                 <div className="hidden sm:flex items-center space-x-2 px-3 py-1.5 bg-gray-100 rounded-lg">
                   <User className="w-4 h-4 text-gray-600" />
                   <span className="text-sm font-medium text-gray-700">
-                    {formatAddress(user?.addr)}
+                    {identityLabel}
+                  </span>
+                  <span className="text-[10px] uppercase tracking-wide text-gray-500">
+                    {authMethod === 'magic_link' ? 'Magic' : 'Flow'}
                   </span>
                 </div>
                 <button

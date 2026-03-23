@@ -63,6 +63,7 @@ AjoSafe addresses the first layer of this problem now by making circle rules vis
 - public web app deployed on Vercel
 - Flow testnet smart contract for circle state and contribution tracking
 - Flow wallet-based authentication through FCL
+- Magic Link walletless sign-in (auth session)
 - create-circle flow with validation
 - contribution flow from the circle page
 - Filecoin-backed agreement upload and retrieval through Synapse
@@ -76,10 +77,11 @@ AjoSafe addresses the first layer of this problem now by making circle rules vis
 - create the circle on Flow testnet
 - load the agreement back on the circle page
 - make contributions to the created circle
+- sign in walletlessly with Magic Link
 
 ### Not Yet Implemented In The Live Runtime
 
-- walletless email or passkey login
+- walletless passkey flow and account-linking for onchain transactions
 - NGN deposit or fiat on-ramp
 - real escrow of circle funds
 - mandatory deposit payment before activation
@@ -174,6 +176,7 @@ NEXT_PUBLIC_FLOW_NETWORK=testnet
 NEXT_PUBLIC_FLOW_ACCESS_NODE=https://rest-testnet.onflow.org
 NEXT_PUBLIC_FLOW_DISCOVERY_WALLET=https://fcl-discovery.onflow.org/testnet/authn
 NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=YOUR_WALLETCONNECT_PROJECT_ID
+NEXT_PUBLIC_MAGIC_PUBLISHABLE_KEY=YOUR_MAGIC_PUBLISHABLE_KEY
 NEXT_PUBLIC_FLOW_CONTRACT_ADDRESS=0xf7f80e14d9d60ea3
 
 FILECOIN_RPC_URL=https://api.calibration.node.glif.io/rpc/v1
@@ -224,6 +227,7 @@ npm run fund:filecoin-pay
 - [x] Add pending acknowledgement lifecycle UX (status + due-date guards)
 - [x] Add duplicate-contribution protection for current round (UI guard + contract check)
 - [x] Add auth options page for wallet-first + walletless rollout messaging
+- [x] Implement Magic Link walletless sign-in (auth-only mode)
 - [ ] Finalize public demo flow, script, and submission materials
 
 ### Post-Hack Product Roadmap
@@ -238,7 +242,7 @@ npm run fund:filecoin-pay
 
 #### Mainstream Onboarding
 
-- [ ] walletless login with email and passkeys
+- [ ] walletless passkeys + account linking for onchain actions
 - [ ] better invitation and member-acceptance flows
 - [ ] NGN deposit and fiat on-ramp support
 - [ ] clearer onboarding for non-crypto-native users
