@@ -108,7 +108,7 @@ const useCircleStore = create((set, get) => ({
         );
       } catch (acknowledgementError) {
         warning =
-          'Circle created, but the creator acknowledgement record could not be saved to Filecoin right now.';
+          'Circle created on Flow, but a secondary Filecoin acknowledgement record could not be saved right now.';
       }
 
       set({ loading: false });
@@ -148,7 +148,7 @@ const useCircleStore = create((set, get) => ({
         );
       } catch (acknowledgementError) {
         warning =
-          'Agreement acknowledged on Flow, but the Filecoin acknowledgement record could not be saved right now.';
+          'Agreement acknowledged on Flow, but a secondary Filecoin acknowledgement record could not be saved right now.';
       }
 
       set({ loading: false });

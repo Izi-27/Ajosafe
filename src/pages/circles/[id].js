@@ -65,7 +65,7 @@ function formatAgreementError(error) {
 }
 
 function getStatusMeta(status) {
-  return STATUS_META[Number(status)] || STATUS_META[4];
+  return STATUS_META[status] || STATUS_META[4];
 }
 
 function normalizeAddress(value) {
@@ -81,8 +81,44 @@ function normalizeAddress(value) {
   return trimmed.startsWith('0x') ? trimmed : `0x${trimmed}`;
 }
 
+function parseCircleStatus(status) {
+  if (typeof status === 'number' && Number.isFinite(status)) {
+    return status;
+  }
+
+  if (typeof status === 'string') {
+    if (/^\d+$/.test(status)) {
+      return parseInt(status, 10);
+    }
+
+    const mapped = {
+      ACTIVE: 0,
+      PAUSED: 1,
+      COMPLETED: 2,
+      DISSOLVED: 3,
+      PENDING_ACKNOWLEDGEMENT: 4,
+    };
+
+    return mapped[status] ?? null;
+  }
+
+  if (status && typeof status === 'object') {
+    if ('rawValue' in status) {
+      return parseCircleStatus(status.rawValue);
+    }
+    if ('value' in status) {
+      return parseCircleStatus(status.value);
+    }
+    if ('case' in status) {
+      return parseCircleStatus(status.case);
+    }
+  }
+
+  return null;
+}
+
 function buildRoundSchedule(circle) {
-  const status = Number(circle?.status);
+  const status = parseCircleStatus(circle?.status);
   const activationTime =
     status === 4 ? null : normalizeFlowTimestamp(circle?.lastPayoutTime);
   const contributionFrequency = Number(circle?.config?.contributionFrequency || 0);
@@ -180,20 +216,24 @@ export default function CircleDetails() {
     );
   }, [membersList, normalizedUserAddress]);
 
-  const statusMeta = getStatusMeta(currentCircle?.status);
+  const statusCode = parseCircleStatus(currentCircle?.status);
+  const statusMeta = getStatusMeta(statusCode ?? 4);
   const frequency = secondsToFrequency(currentCircle?.config?.contributionFrequency);
   const agreementCid = currentCircle?.config?.agreementCID;
   const progress =
     ((Number(currentCircle?.currentRound || 0) / Number(currentCircle?.config?.totalRounds || 1)) || 0) * 100;
   const isMember = !!currentMember;
   const needsAcknowledgement = isMember && !currentMember?.depositPaid;
-  const status = Number(currentCircle?.status);
-  const isCirclePending = status === 4;
-  const isCircleActive = status === 0;
-  const isCircleCompleted = status === 2;
+  const acknowledgementCount = membersList.filter((member) => member.depositPaid).length;
+  const isCirclePending =
+    statusCode === 4 ||
+    (statusCode === null &&
+      Number(acknowledgementCount) < Number(membersList.length) &&
+      !currentCircle?.nextPayoutTime);
+  const isCircleActive = statusCode === 0;
+  const isCircleCompleted = statusCode === 2;
   const nextDueAt = currentCircle?.nextPayoutTime;
   const isPaymentDue = isFlowTimestampDue(nextDueAt);
-  const acknowledgementCount = membersList.filter((member) => member.depositPaid).length;
   const roundSchedule = useMemo(() => buildRoundSchedule(currentCircle), [currentCircle]);
   const activationTime = !isCirclePending
     ? normalizeFlowTimestamp(currentCircle?.lastPayoutTime)
