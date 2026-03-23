@@ -141,7 +141,7 @@ function buildRoundSchedule(circle) {
 export default function CircleDetails() {
   const router = useRouter();
   const { id } = router.query;
-  const { user } = useAuthStore();
+  const { user, canTransact, login } = useAuthStore();
   const {
     currentCircle,
     loading,
@@ -301,6 +301,11 @@ export default function CircleDetails() {
   };
 
   const handleOpenContribution = () => {
+    if (!canTransact) {
+      toast.error('Connect Flow Wallet to make onchain contributions.');
+      return;
+    }
+
     if (!isMember) {
       toast.error('Only members of this circle can contribute.');
       return;
@@ -371,6 +376,17 @@ export default function CircleDetails() {
   return (
     <Layout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {!canTransact && (
+          <div className="mb-6 rounded-lg border border-yellow-200 bg-yellow-50 p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <p className="text-sm text-yellow-900">
+              You are signed in walletlessly. Connect Flow Wallet to acknowledge agreements or make contributions.
+            </p>
+            <button onClick={login} className="btn-primary whitespace-nowrap">
+              Connect Flow Wallet
+            </button>
+          </div>
+        )}
+
         <div className="mb-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
