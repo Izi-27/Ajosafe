@@ -6,7 +6,7 @@ import { LogOut, User, Wallet } from 'lucide-react';
 
 export default function Header() {
   const router = useRouter();
-  const { user, isAuthenticated, login, logout } = useAuthStore();
+  const { user, isAuthenticated, logout } = useAuthStore();
 
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
@@ -64,9 +64,11 @@ export default function Header() {
                 </button>
               </>
             ) : (
-              <button onClick={login} className="btn-primary">
-                Connect Wallet
-              </button>
+              <Link href="/auth">
+                <button className="btn-primary">
+                  Get Started
+                </button>
+              </Link>
             )}
           </div>
         </div>

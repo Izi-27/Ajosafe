@@ -36,6 +36,10 @@ const flowConfig = {
   'app.detail.description': 'Ajo that can\'t run away with your money',
 };
 
+if (process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID) {
+  flowConfig['walletconnect.projectId'] = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
+}
+
 if (contractAddress) {
   flowConfig['0xAjoCircle'] = contractAddress;
 }

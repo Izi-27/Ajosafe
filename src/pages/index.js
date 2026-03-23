@@ -7,7 +7,7 @@ import { Shield, Users, Zap, Lock, FileCheck, TrendingUp } from 'lucide-react';
 
 export default function Home() {
   const router = useRouter();
-  const { isAuthenticated, login } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -18,13 +18,13 @@ export default function Home() {
   const features = [
     {
       icon: Shield,
-      title: 'Theft-Proof',
-      description: 'Smart contracts hold funds in escrow. No single person can run away with contributions.',
+      title: 'Rule-Based Transparency',
+      description: 'Circle rules, member status, and contribution progress are visible to everyone.',
     },
     {
       icon: Zap,
-      title: 'Automated Payouts',
-      description: 'Payouts execute automatically on schedule. No human discretion, just code.',
+      title: 'Structured Circle Lifecycle',
+      description: 'Circles start pending and become active only after all listed members acknowledge.',
     },
     {
       icon: Lock,
@@ -33,8 +33,8 @@ export default function Home() {
     },
     {
       icon: Users,
-      title: 'No Wallet Fatigue',
-      description: 'Login with email or passkey. No crypto knowledge needed to participate.',
+      title: 'Onboarding Path',
+      description: 'Flow wallet login works now. Walletless login (Magic Link) is the next onboarding upgrade.',
     },
     {
       icon: FileCheck,
@@ -43,8 +43,8 @@ export default function Home() {
     },
     {
       icon: TrendingUp,
-      title: 'Forward Commitment',
-      description: 'Future payments locked at start. Members commit upfront, reducing defaults.',
+      title: 'Due-Date Enforcement',
+      description: 'Contributions are blocked before due date in UI and in contract checks.',
     },
   ];
 
@@ -56,8 +56,8 @@ export default function Home() {
     },
     {
       step: 2,
-      title: 'Members Join & Commit',
-      description: 'Everyone signs the agreement and pays a security deposit (2x contribution).',
+      title: 'Members Acknowledge',
+      description: 'The circle remains pending until every listed member acknowledges the agreement.',
     },
     {
       step: 3,
@@ -84,9 +84,11 @@ export default function Home() {
               Save together, trust the code, not just people.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up">
-              <button onClick={login} className="btn-primary text-lg px-8 py-3">
-                Get Started Free
-              </button>
+              <Link href="/auth">
+                <button className="btn-primary text-lg px-8 py-3">
+                  Get Started
+                </button>
+              </Link>
               <Link href="#how-it-works">
                 <button className="btn-outline text-lg px-8 py-3">
                   How It Works
@@ -158,9 +160,11 @@ export default function Home() {
           <p className="text-xl text-primary-100 mb-8">
             Join thousands using AjoSafe to save together without the risk of theft or defaults.
           </p>
-          <button onClick={login} className="bg-white text-primary-600 px-8 py-3 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors">
-            Create Your First Circle
-          </button>
+          <Link href="/auth">
+            <button className="bg-white text-primary-600 px-8 py-3 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors">
+              Create Your First Circle
+            </button>
+          </Link>
         </div>
       </div>
     </Layout>

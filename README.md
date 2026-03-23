@@ -173,6 +173,7 @@ Create `.env.local` from `.env.example` and configure:
 NEXT_PUBLIC_FLOW_NETWORK=testnet
 NEXT_PUBLIC_FLOW_ACCESS_NODE=https://rest-testnet.onflow.org
 NEXT_PUBLIC_FLOW_DISCOVERY_WALLET=https://fcl-discovery.onflow.org/testnet/authn
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=YOUR_WALLETCONNECT_PROJECT_ID
 NEXT_PUBLIC_FLOW_CONTRACT_ADDRESS=0xf7f80e14d9d60ea3
 
 FILECOIN_RPC_URL=https://api.calibration.node.glif.io/rpc/v1
@@ -219,7 +220,9 @@ npm run fund:filecoin-pay
 - [x] Connect the frontend to Flow testnet
 - [x] Add Filecoin agreement storage with Synapse
 - [x] Retrieve and display stored agreement records
-- [ ] Improve UX for long Filecoin-backed circle creation
+- [x] Improve UX for long Filecoin-backed circle creation
+- [x] Add pending acknowledgement lifecycle UX (status + due-date guards)
+- [x] Add auth options page for wallet-first + walletless rollout messaging
 - [ ] Finalize public demo flow, script, and submission materials
 
 ### Post-Hack Product Roadmap
