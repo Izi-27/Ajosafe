@@ -141,7 +141,7 @@ function buildRoundSchedule(circle) {
 export default function CircleDetails() {
   const router = useRouter();
   const { id } = router.query;
-  const { user, canTransact, login } = useAuthStore();
+  const { user, canTransact, authMethod, login } = useAuthStore();
   const {
     currentCircle,
     loading,
@@ -204,6 +204,7 @@ export default function CircleDetails() {
     () => Object.values(currentCircle?.members || {}),
     [currentCircle?.members]
   );
+  const canSubmitCircleActions = canTransact || authMethod === 'magic_link';
 
   const normalizedUserAddress = normalizeAddress(user?.addr);
   const currentMember = useMemo(() => {
@@ -301,8 +302,8 @@ export default function CircleDetails() {
   };
 
   const handleOpenContribution = () => {
-    if (!canTransact) {
-      toast.error('Connect Flow Wallet to make onchain contributions.');
+    if (!canSubmitCircleActions) {
+      toast.error('Sign in to continue with circle actions.');
       return;
     }
 
@@ -376,10 +377,10 @@ export default function CircleDetails() {
   return (
     <Layout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {!canTransact && (
+        {!canSubmitCircleActions && (
           <div className="mb-6 rounded-lg border border-yellow-200 bg-yellow-50 p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <p className="text-sm text-yellow-900">
-              You are signed in walletlessly. Connect Flow Wallet to acknowledge agreements or make contributions.
+              You are not connected. Sign in with Magic Link or Flow Wallet to acknowledge agreements and contribute.
             </p>
             <button onClick={login} className="btn-primary whitespace-nowrap">
               Connect Flow Wallet

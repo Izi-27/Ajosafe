@@ -5,6 +5,8 @@ import { contributeTransaction } from '@/lib/flow/transactions/contribute';
 import { acknowledgeAgreementTransaction } from '@/lib/flow/transactions/acknowledgeAgreement';
 import { storeAgreementOnFilecoin, createAgreementAcknowledgement } from '@/lib/filecoin/storage';
 import { frequencyToSeconds } from '@/lib/utils/formatters';
+import { getMagicIdToken } from '@/lib/auth/magic';
+import useAuthStore from '@/store/authStore';
 
 const OPTIONAL_ARCHIVE_TIMEOUT_MS = 15000;
 
@@ -17,6 +19,25 @@ function withTimeout(promise, timeoutMs, timeoutMessage) {
       }, timeoutMs);
     }),
   ]);
+}
+
+async function postWalletlessCircleAction(path, body = {}) {
+  const idToken = await getMagicIdToken();
+  const response = await fetch(path, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${idToken}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload.error || 'Walletless request failed.');
+  }
+
+  return payload;
 }
 
 const useCircleStore = create((set, get) => ({
@@ -141,7 +162,13 @@ const useCircleStore = create((set, get) => ({
   acknowledgeAgreement: async ({ circleId, agreementCid, memberAddress, memberName }) => {
     set({ loading: true, error: null });
     try {
-      await acknowledgeAgreementTransaction(circleId);
+      const authMethod = useAuthStore.getState().authMethod;
+      if (authMethod === 'magic_link') {
+        await postWalletlessCircleAction(`/api/walletless/circles/${circleId}/acknowledge`);
+      } else {
+        await acknowledgeAgreementTransaction(circleId);
+      }
+
       await get().fetchCircleDetails(circleId);
 
       let warning = null;
@@ -176,7 +203,15 @@ const useCircleStore = create((set, get) => ({
   makeContribution: async (circleId, round, amount) => {
     set({ loading: true, error: null });
     try {
-      await contributeTransaction(circleId, round, amount);
+      const authMethod = useAuthStore.getState().authMethod;
+      if (authMethod === 'magic_link') {
+        await postWalletlessCircleAction(`/api/walletless/circles/${circleId}/contribute`, {
+          round,
+          amount,
+        });
+      } else {
+        await contributeTransaction(circleId, round, amount);
+      }
       
       await get().fetchCircleDetails(circleId);
       set({ loading: false, progressMessage: null });
