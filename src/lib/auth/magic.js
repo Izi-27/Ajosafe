@@ -73,6 +73,11 @@ export async function getMagicSession() {
   return normalizeMagicInfo(info, null);
 }
 
+export async function getMagicIdToken() {
+  const magic = await getMagicClient();
+  return magic.user.getIdToken();
+}
+
 export async function logoutMagicSession() {
   const magic = await getMagicClient();
   const isLoggedIn = await magic.user.isLoggedIn();
@@ -81,4 +86,3 @@ export async function logoutMagicSession() {
     await magic.user.logout();
   }
 }
-

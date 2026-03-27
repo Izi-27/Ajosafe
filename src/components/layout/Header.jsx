@@ -6,8 +6,13 @@ import { LogOut, User, Wallet } from 'lucide-react';
 
 export default function Header() {
   const router = useRouter();
-  const { user, isAuthenticated, authMethod, canTransact, logout } = useAuthStore();
+  const { user, isAuthenticated, authMethod, authMode, canTransact, logout } = useAuthStore();
   const identityLabel = user?.addr ? formatAddress(user.addr) : user?.email || 'Walletless User';
+  const modeLabel = authMode === 'flow_linked_hybrid'
+    ? 'Hybrid'
+    : authMethod === 'magic_link'
+      ? 'Magic'
+      : 'Flow';
 
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
@@ -58,7 +63,7 @@ export default function Header() {
                     {identityLabel}
                   </span>
                   <span className="text-[10px] uppercase tracking-wide text-gray-500">
-                    {authMethod === 'magic_link' ? 'Magic' : 'Flow'}
+                    {modeLabel}
                   </span>
                 </div>
                 <button

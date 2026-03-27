@@ -5,22 +5,41 @@ import {
   loginWithMagicLink as magicLoginWithEmailOTP,
   logoutMagicSession,
 } from '@/lib/auth/magic';
+import {
+  bootstrapWalletlessSession,
+  fetchWalletlessProfile,
+} from '@/lib/auth/walletless';
 
-function resolveSession(flowUser, magicUser) {
+function resolveSession(flowUser, magicUser, walletlessProfile) {
   if (flowUser?.loggedIn) {
+    if (magicUser?.loggedIn) {
+      return {
+        user: flowUser,
+        isAuthenticated: true,
+        authMethod: 'flow_wallet',
+        authMode: 'flow_linked_hybrid',
+        canTransact: Boolean(flowUser.addr),
+      };
+    }
+
     return {
       user: flowUser,
       isAuthenticated: true,
       authMethod: 'flow_wallet',
+      authMode: 'flow_self_custody',
       canTransact: Boolean(flowUser.addr),
     };
   }
 
   if (magicUser?.loggedIn) {
     return {
-      user: magicUser,
+      user: {
+        ...magicUser,
+        addr: walletlessProfile?.managedFlowAddress || magicUser.addr || null,
+      },
       isAuthenticated: true,
       authMethod: 'magic_link',
+      authMode: walletlessProfile?.authMode || 'magic_walletless',
       canTransact: false,
     };
   }
@@ -29,6 +48,7 @@ function resolveSession(flowUser, magicUser) {
     user: null,
     isAuthenticated: false,
     authMethod: null,
+    authMode: null,
     canTransact: false,
   };
 }
@@ -37,8 +57,10 @@ const useAuthStore = create((set, get) => ({
   user: null,
   flowUser: null,
   magicUser: null,
+  walletlessProfile: null,
   isAuthenticated: false,
   authMethod: null,
+  authMode: null,
   canTransact: false,
   sessionReady: false,
   loading: false,
@@ -63,9 +85,20 @@ const useAuthStore = create((set, get) => ({
         throw new Error('Magic Link login completed but no user session was returned.');
       }
 
+      let walletlessProfile = null;
+      try {
+        walletlessProfile = await bootstrapWalletlessSession({
+          issuer: magicUser.issuer,
+          email: magicUser.email,
+        });
+      } catch (_) {
+        // Non-blocking to keep login flow resilient.
+      }
+
       set((state) => ({
         magicUser,
-        ...resolveSession(state.flowUser, magicUser),
+        walletlessProfile,
+        ...resolveSession(state.flowUser, magicUser, walletlessProfile),
         loading: false,
         sessionReady: true,
       }));
@@ -97,8 +130,10 @@ const useAuthStore = create((set, get) => ({
       user: null,
       flowUser: null,
       magicUser: null,
+      walletlessProfile: null,
       isAuthenticated: false,
       authMethod: null,
+      authMode: null,
       canTransact: false,
       loading: false,
       sessionReady: true,
@@ -111,7 +146,7 @@ const useAuthStore = create((set, get) => ({
     fcl.currentUser.subscribe((flowUser) => {
       set((state) => ({
         flowUser,
-        ...resolveSession(flowUser, state.magicUser),
+        ...resolveSession(flowUser, state.magicUser, state.walletlessProfile),
         loading: false,
         sessionReady: true,
       }));
@@ -120,9 +155,30 @@ const useAuthStore = create((set, get) => ({
     (async () => {
       try {
         const magicUser = await getMagicSession();
+
+        let walletlessProfile = null;
+        if (magicUser?.loggedIn) {
+          try {
+            walletlessProfile = await fetchWalletlessProfile({
+              issuer: magicUser.issuer,
+              email: magicUser.email,
+            });
+          } catch (_) {
+            try {
+              walletlessProfile = await bootstrapWalletlessSession({
+                issuer: magicUser.issuer,
+                email: magicUser.email,
+              });
+            } catch (_) {
+              walletlessProfile = null;
+            }
+          }
+        }
+
         set((state) => ({
           magicUser,
-          ...resolveSession(state.flowUser, magicUser),
+          walletlessProfile,
+          ...resolveSession(state.flowUser, magicUser, walletlessProfile),
           loading: false,
           sessionReady: true,
         }));
@@ -134,7 +190,8 @@ const useAuthStore = create((set, get) => ({
 
         set((state) => ({
           magicUser: null,
-          ...resolveSession(state.flowUser, null),
+          walletlessProfile: null,
+          ...resolveSession(state.flowUser, null, null),
           loading: false,
           sessionReady: true,
         }));
