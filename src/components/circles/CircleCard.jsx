@@ -62,11 +62,11 @@ export default function CircleCard({ circle }) {
 
   const getStatusColor = (status) => {
     const colors = {
-      0: 'bg-green-100 text-green-800',
-      1: 'bg-orange-100 text-orange-800',
-      2: 'bg-blue-100 text-blue-800',
-      3: 'bg-gray-100 text-gray-800',
-      4: 'bg-yellow-100 text-yellow-800',
+      0: 'bg-emerald-100 text-emerald-700 border border-emerald-200',
+      1: 'bg-orange-100 text-orange-700 border border-orange-200',
+      2: 'bg-blue-100 text-blue-700 border border-blue-200',
+      3: 'bg-slate-100 text-slate-700 border border-slate-200',
+      4: 'bg-amber-100 text-amber-700 border border-amber-200',
     };
     return colors[status] || colors[0];
   };
@@ -106,53 +106,53 @@ export default function CircleCard({ circle }) {
           : `Opens ${formatFlowTimestamp(nextDueAt, 'PPP p')}`;
 
   return (
-    <div className="card group hover:shadow-lg">
+    <article className="card hover:shadow-md hover:-translate-y-0.5">
       <div className="flex justify-between items-start mb-4">
         <div>
-          <h3 className="text-xl font-semibold text-gray-900 group-hover:text-primary-600 transition-colors">
+          <h3 className="text-xl font-bold text-slate-900">
             {circle.config?.name || 'Unnamed Circle'}
           </h3>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-slate-500 mt-1">
             {circle.config?.description || 'No description'}
           </p>
         </div>
-        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(normalizedStatusCode)}`}>
+        <span className={`px-3 py-1 rounded-full text-[11px] font-semibold ${getStatusColor(normalizedStatusCode)}`}>
           {getStatusText(normalizedStatusCode)}
         </span>
       </div>
 
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div className="flex items-center space-x-2">
-          <DollarSign className="w-4 h-4 text-gray-400" />
+          <DollarSign className="w-4 h-4 text-slate-400" />
           <div>
-            <p className="text-xs text-gray-500">Contribution</p>
-            <p className="font-semibold text-gray-900">
+            <p className="text-xs text-slate-500">Contribution</p>
+            <p className="font-semibold text-slate-900">
               {formatCurrency(circle.config?.contributionAmount || 0)}
             </p>
           </div>
         </div>
 
         <div className="flex items-center space-x-2">
-          <Calendar className="w-4 h-4 text-gray-400" />
+          <Calendar className="w-4 h-4 text-slate-400" />
           <div>
-            <p className="text-xs text-gray-500">Frequency</p>
-            <p className="font-semibold text-gray-900 capitalize">{frequency}</p>
+            <p className="text-xs text-slate-500">Frequency</p>
+            <p className="font-semibold text-slate-900 capitalize">{frequency}</p>
           </div>
         </div>
 
         <div className="flex items-center space-x-2">
-          <Users className="w-4 h-4 text-gray-400" />
+          <Users className="w-4 h-4 text-slate-400" />
           <div>
-            <p className="text-xs text-gray-500">Members</p>
-            <p className="font-semibold text-gray-900">{memberCount}</p>
+            <p className="text-xs text-slate-500">Members</p>
+            <p className="font-semibold text-slate-900">{memberCount}</p>
           </div>
         </div>
 
         <div className="flex items-center space-x-2">
-          <TrendingUp className="w-4 h-4 text-gray-400" />
+          <TrendingUp className="w-4 h-4 text-slate-400" />
           <div>
-            <p className="text-xs text-gray-500">Progress</p>
-            <p className="font-semibold text-gray-900">
+            <p className="text-xs text-slate-500">Progress</p>
+            <p className="font-semibold text-slate-900">
               Round {circle.currentRound || 0}/{circle.config?.totalRounds || 0}
             </p>
           </div>
@@ -160,47 +160,47 @@ export default function CircleCard({ circle }) {
       </div>
 
       <div className="mb-4">
-        <div className="flex justify-between text-xs text-gray-600 mb-1">
-          <span>Progress</span>
+        <div className="flex justify-between text-xs text-slate-600 mb-1">
+          <span>Round completion</span>
           <span>{progress.toFixed(0)}%</span>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
+        <div className="w-full bg-slate-200 rounded-full h-2">
           <div
-            className="bg-primary-600 h-2 rounded-full transition-all"
+            className="bg-gradient-to-r from-cyan-500 to-blue-600 h-2 rounded-full transition-all"
             style={{ width: `${progress}%` }}
           />
         </div>
       </div>
 
-      <div className="mb-4 p-3 bg-blue-50 rounded-lg">
-        <p className="text-xs text-blue-600 font-medium">Next Due Date</p>
-        <p className="text-sm text-blue-900 font-semibold">{nextDueSummary}</p>
-        <p className="text-xs text-blue-700 mt-1">{nextDueDetail}</p>
+      <div className="mb-4 p-3 rounded-xl bg-sky-50 border border-sky-100">
+        <p className="text-xs text-sky-700 font-semibold">Next Due Date</p>
+        <p className="text-sm text-slate-900 font-semibold">{nextDueSummary}</p>
+        <p className="text-xs text-slate-600 mt-1">{nextDueDetail}</p>
       </div>
 
-      <div className="flex justify-between items-center pt-4 border-t border-gray-200">
+      <div className="flex justify-between items-center pt-4 border-t border-slate-200">
         <div className="flex -space-x-2">
           {members.slice(0, 4).map((member, idx) => (
             <div
               key={idx}
-              className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 border-2 border-white flex items-center justify-center text-white text-xs font-semibold"
+              className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-blue-700 border-2 border-white flex items-center justify-center text-white text-xs font-semibold"
             >
               {member.name?.charAt(0).toUpperCase() || '?'}
             </div>
           ))}
           {memberCount > 4 && (
-            <div className="w-8 h-8 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center text-gray-600 text-xs font-semibold">
+            <div className="w-8 h-8 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center text-slate-600 text-xs font-semibold">
               +{memberCount - 4}
             </div>
           )}
         </div>
 
         <Link href={`/circles/${circle.id}`}>
-          <button className="text-primary-600 hover:text-primary-700 font-medium text-sm transition-colors">
+          <button className="text-primary-700 hover:text-primary-800 font-semibold text-sm transition-colors">
             View Details {'->'}
           </button>
         </Link>
       </div>
-    </div>
+    </article>
   );
 }

@@ -159,21 +159,21 @@ export default function CreateCircle() {
 
   return (
     <Layout>
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Create New Circle</h1>
-          <p className="text-gray-600">Set up your savings circle in 3 easy steps</p>
+      <div className="section-shell py-8 md:py-10">
+        <div className="glass-banner p-6 md:p-8 mb-8">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-2">Create New Circle</h1>
+          <p className="text-slate-600">Define terms, add members, and publish a shared agreement record.</p>
         </div>
 
-        <div className="mb-8">
+        <div className="mb-8 card">
           <div className="flex items-center justify-between">
             {[1, 2, 3].map((s) => (
               <div key={s} className="flex items-center flex-1">
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
                     s <= step
-                      ? 'bg-primary-600 text-white'
-                      : 'bg-gray-200 text-gray-600'
+                      ? 'bg-gradient-to-br from-cyan-500 to-blue-700 text-white'
+                      : 'bg-slate-200 text-slate-600'
                   }`}
                 >
                   {s < step ? <Check className="w-5 h-5" /> : s}
@@ -181,7 +181,7 @@ export default function CreateCircle() {
                 {s < 3 && (
                   <div
                     className={`flex-1 h-1 mx-2 ${
-                      s < step ? 'bg-primary-600' : 'bg-gray-200'
+                      s < step ? 'bg-primary-600' : 'bg-slate-200'
                     }`}
                   />
                 )}
@@ -189,13 +189,13 @@ export default function CreateCircle() {
             ))}
           </div>
           <div className="flex justify-between mt-2">
-            <span className="text-sm font-medium text-gray-700">Basic Info</span>
-            <span className="text-sm font-medium text-gray-700">Members</span>
-            <span className="text-sm font-medium text-gray-700">Review</span>
+            <span className="text-sm font-medium text-slate-700">Basic Info</span>
+            <span className="text-sm font-medium text-slate-700">Members</span>
+            <span className="text-sm font-medium text-slate-700">Review</span>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm p-8">
+        <div className="card">
           {step === 1 && (
             <div className="space-y-6">
               <h2 className="text-xl font-semibold mb-4">Circle Details</h2>
@@ -441,7 +441,7 @@ export default function CreateCircle() {
                 </div>
               </div>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
                 <p className="text-sm text-blue-900">
                   <strong>Note:</strong> Once created, circle rules cannot be changed. The circle will stay pending until all listed members acknowledge the agreement.
                 </p>

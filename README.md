@@ -243,6 +243,8 @@ npm run fund:filecoin-pay
 #### Mainstream Onboarding
 
 - [ ] walletless passkeys + account linking for onchain actions
+- [ ] email-only member invites and join flow (no mandatory wallet address entry during circle creation)
+- [ ] automatic mapping of email identity to managed Flow account before first contribution
 - [ ] better invitation and member-acceptance flows
 - [ ] NGN deposit and fiat on-ramp support
 - [ ] clearer onboarding for non-crypto-native users

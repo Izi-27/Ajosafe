@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '@/components/layout/Layout';
 import useAuthStore from '@/store/authStore';
-import { Wallet, Mail, ArrowRight } from 'lucide-react';
+import { Mail, Wallet, ArrowRight, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function AuthPage() {
@@ -40,67 +40,71 @@ export default function AuthPage() {
 
   return (
     <Layout>
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
-        <div className="text-center mb-10">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900">Start With AjoSafe</h1>
-          <p className="text-gray-600 mt-4 max-w-2xl mx-auto">
-            Choose wallet login for full onchain actions, or use Magic Link for walletless onboarding.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-            <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center mb-4">
-              <Wallet className="w-6 h-6 text-primary-700" />
-            </div>
-            <h2 className="text-xl font-semibold text-gray-900">Connect Flow Wallet</h2>
-            <p className="text-sm text-gray-600 mt-2">
-              Full access mode. Required for creating circles, acknowledging agreements, and contributing on testnet.
+      <section className="section-shell py-12 md:py-16">
+        <div className="max-w-5xl mx-auto glass-banner p-6 md:p-10">
+          <div className="text-center max-w-3xl mx-auto">
+            <p className="inline-flex items-center gap-2 text-xs font-semibold tracking-[0.16em] uppercase text-sky-700 bg-sky-50 border border-sky-200 rounded-full px-3 py-1">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              Choose your access mode
             </p>
-            <button
-              onClick={handleWalletLogin}
-              disabled={loading}
-              className="btn-primary mt-6 inline-flex items-center gap-2 disabled:opacity-50"
-            >
-              {loading ? 'Connecting...' : 'Continue With Flow Wallet'}
-              {!loading && <ArrowRight className="w-4 h-4" />}
-            </button>
+            <h1 className="mt-4 text-3xl md:text-5xl font-extrabold text-slate-900">Sign in to AjoSafe</h1>
+            <p className="mt-3 text-slate-600">
+              Start with email if you are new to wallets, or connect a Flow wallet for full transaction access.
+            </p>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-            <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mb-4">
-              <Mail className="w-6 h-6 text-gray-700" />
-            </div>
-            <h2 className="text-xl font-semibold text-gray-900">Walletless (Magic Link)</h2>
-            <p className="text-sm text-gray-600 mt-2">
-              Sign in with your email to start without a wallet. You can connect a Flow wallet afterwards for
-              transactions.
-            </p>
-            <div className="mt-6 space-y-3">
-              <input
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                className="input"
-                placeholder="you@example.com"
-              />
+          <div className="mt-10 grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <article className="rounded-2xl border border-slate-200 bg-white p-6">
+              <div className="w-11 h-11 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center">
+                <Mail className="w-5 h-5" />
+              </div>
+              <h2 className="mt-4 text-xl font-bold text-slate-900">Walletless Start (Magic Link)</h2>
+              <p className="mt-2 text-sm text-slate-600">
+                Use email OTP to enter quickly. You can still link a wallet later for full self-custody controls.
+              </p>
+              <div className="mt-5 space-y-3">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  className="input"
+                  placeholder="you@example.com"
+                />
+                <button
+                  onClick={handleMagicLinkLogin}
+                  disabled={loading}
+                  className="btn-outline w-full inline-flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {loading ? 'Sending Magic Link...' : 'Continue with Email'}
+                  {!loading && <ArrowRight className="w-4 h-4" />}
+                </button>
+              </div>
+            </article>
+
+            <article className="rounded-2xl border border-slate-200 bg-white p-6">
+              <div className="w-11 h-11 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center">
+                <Wallet className="w-5 h-5" />
+              </div>
+              <h2 className="mt-4 text-xl font-bold text-slate-900">Flow Wallet Mode</h2>
+              <p className="mt-2 text-sm text-slate-600">
+                Best for creators and members who want to run full onchain actions directly from their wallet.
+              </p>
               <button
-                onClick={handleMagicLinkLogin}
+                onClick={handleWalletLogin}
                 disabled={loading}
-                className="btn-outline w-full disabled:opacity-50"
+                className="btn-primary w-full mt-5 inline-flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                {loading ? 'Sending Magic Link...' : 'Continue With Magic Link'}
+                {loading ? 'Connecting...' : 'Connect Flow Wallet'}
+                {!loading && <ArrowRight className="w-4 h-4" />}
               </button>
-            </div>
+            </article>
+          </div>
+
+          <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            Hackathon scope note: walletless login is live now; circle creation still requires Flow wallet mode in this MVP.
           </div>
         </div>
-
-        <div className="mt-8 rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
-          Walletless login is now enabled. Flow wallet remains required for onchain transactions until account-linking
-          is added.
-        </div>
-      </div>
+      </section>
     </Layout>
   );
 }
-

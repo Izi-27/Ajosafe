@@ -376,7 +376,7 @@ export default function CircleDetails() {
 
   return (
     <Layout>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="section-shell py-8 md:py-10">
         {!canSubmitCircleActions && (
           <div className="mb-6 rounded-lg border border-yellow-200 bg-yellow-50 p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <p className="text-sm text-yellow-900">
@@ -388,13 +388,14 @@ export default function CircleDetails() {
           </div>
         )}
 
-        <div className="mb-8">
+        <div className="mb-8 glass-banner p-6 md:p-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              <p className="text-xs uppercase tracking-[0.14em] text-slate-500 font-semibold">Circle Overview</p>
+              <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-2 mt-2">
                 {currentCircle.config?.name}
               </h1>
-              <p className="text-gray-600">{currentCircle.config?.description}</p>
+              <p className="text-slate-600">{currentCircle.config?.description}</p>
             </div>
             <span className={`inline-flex px-4 py-2 rounded-full text-sm font-semibold ${statusMeta.badge}`}>
               {statusMeta.label}
